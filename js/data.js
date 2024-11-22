@@ -1,4 +1,4 @@
-const GITHUB_REPO_URL = 'https://dennis-culhane.github.io/Culhane.github.io';
+const GITHUB_REPO_URL = 'https://dennis-culhane.github.io/culhane2.github.io';
 
 const researchAreas = [
     "Homelessness",
