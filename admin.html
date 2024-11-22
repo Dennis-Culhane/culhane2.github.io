@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Academic Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <a href="/" class="text-xl font-bold text-gray-800">Admin Panel</a>
+                <a href="index.html" class="text-blue-600 hover:text-blue-800">Back to Site</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-md p-8">
+            <h1 class="text-2xl font-bold mb-6">Add New Article</h1>
+            
+            <div class="mb-8">
+                <h2 class="text-lg font-medium text-gray-700 mb-3">Existing Categories</h2>
+                <div id="existing-categories" class="flex flex-wrap gap-2">
+                    <!-- 已有的标签将这里动态显示 -->
+                </div>
+            </div>
+            
+            <form id="article-form" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Title</label>
+                    <input type="text" id="title" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Authors</label>
+                    <input type="text" id="authors" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Categories</label>
+                    <div id="selected-categories" class="mt-2 mb-2 flex flex-wrap gap-2">
+                        <!-- 选中的标签将在这里显示 -->
+                    </div>
+                    <div id="categories-container" class="mt-2 space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" 
+                                class="category-input block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                placeholder="Enter a category">
+                            <button type="button" 
+                                class="add-category px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="date" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Abstract</label>
+                    <textarea id="abstract" rows="4" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">PDF File</label>
+                    <div class="mt-1 flex items-center">
+                        <input type="file" 
+                            id="pdf-file" 
+                            accept=".pdf"
+                            required
+                            class="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-blue-50 file:text-blue-700
+                                hover:file:bg-blue-100"
+                        >
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">Only PDF files are accepted</p>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Add Article
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="mt-12 bg-white rounded-lg shadow-md p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Manage Articles</h2>
+                <div class="flex gap-2">
+                    <button 
+                        onclick="toggleSelectMode()"
+                        id="select-mode-btn"
+                        class="px-4 py-2 text-sm font-medium rounded-md text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800"
+                    >
+                        Select Mode
+                    </button>
+                    <button 
+                        onclick="deleteSelected()"
+                        id="delete-selected-btn"
+                        class="hidden px-4 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+                    >
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 文章列表 -->
+            <div id="articles-list" class="space-y-6">
+                <!-- 文章将在这里动态显示 -->
+            </div>
+        </div>
+
+        <div class="mt-12 bg-white rounded-lg shadow-md p-8">
+            <h2 class="text-2xl font-bold mb-6">Batch Upload Articles</h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Excel File</label>
+                    <input type="file" 
+                        id="excel-file" 
+                        accept=".xlsx, .xls"
+                        class="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-full file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-50 file:text-blue-700
+                            hover:file:bg-blue-100"
+                    >
+                    <p class="mt-2 text-sm text-gray-500">Excel file should contain columns: Title, Authors, Date, Abstract, PDF URL</p>
+                </div>
+
+                <div>
+                    <button onclick="handleBatchUpload()"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        Upload Batch
+                    </button>
+                </div>
+
+                <!-- 预览区域 -->
+                <div id="preview-area" class="hidden">
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Preview</h3>
+                    <div class="max-h-96 overflow-y-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Authors</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categories</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="preview-table" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 在 script 标签内，DOMContentLoaded 事件处理程序之前添加这些全局函数
+
+        // 删除文章
+        window.deleteArticle = function(index) {
+            if (confirm('Are you sure you want to delete this article?')) {
+                const articles = JSON.parse(localStorage.getItem('articles') || '[]');
+                articles.splice(index, 1);
+                localStorage.setItem('articles', JSON.stringify(articles));
+                renderArticlesList();
+                renderExistingCategories(); // 重新渲染现有标签
+            }
+        };
+
+        // 编辑文章
+        window.editArticle = function(index) {
+            const articles = JSON.parse(localStorage.getItem('articles') || '[]');
+            const article = articles[index];
+            
+            // 填充表单
+            document.getElementById('title').value = article.title || '';
+            document.getElementById('authors').value = article.authors || '';
+            document.getElementById('date').value = article.date || '';
+            document.getElementById('abstract').value = article.abstract || '';
+            
+            // 设置选中的标签
+            window.selectedCategories = new Set(article.categories || []);
+            renderSelectedCategories();
+            renderExistingCategories();
+            
+            // 移除文件必填属性，因为可能不需要更新文件
+            document.getElementById('pdf-file').removeAttribute('required');
+            
+            // 修改提交按钮和表单处理
+            const submitButton = document.querySelector('button[type="submit"]');
+            submitButton.textContent = 'Update Article';
+            
+            // 存储正在编辑的文章索引
+            const form = document.getElementById('article-form');
+            form.dataset.editIndex = index;
+            
+            // 修改表单提交处理
+            const originalSubmitHandler = form.onsubmit;
+            form.onsubmit = async function(e) {
+                e.preventDefault();
+                
+                const categoryInputs = document.querySelectorAll('.category-input');
+                const newCategories = Array.from(categoryInputs)
+                    .map(input => input.value.trim())
+                    .filter(value => value !== '');
+                
+                const allCategories = [...new Set([...window.selectedCategories, ...newCategories])];
+                
+                const updatedArticle = {
+                    ...article,
+                    title: document.getElementById('title').value,
+                    authors: document.getElementById('authors').value,
+                    categories: allCategories,
+                    date: document.getElementById('date').value,
+                    abstract: document.getElementById('abstract').value,
+                };
+                
+                // 如果选择了新文件，则更新PDF
+                const pdfFile = document.getElementById('pdf-file').files[0];
+                if (pdfFile) {
+                    const pdfBase64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(pdfFile);
+                    });
+                    updatedArticle.pdf = pdfBase64;
+                    updatedArticle.fileName = pdfFile.name;
+                }
+                
+                // 更新文章
+                articles[index] = updatedArticle;
+                localStorage.setItem('articles', JSON.stringify(articles));
+                
+                // 重置表单
+                form.reset();
+                window.selectedCategories = new Set();
+                renderSelectedCategories();
+                renderExistingCategories();
+                renderArticlesList();
+                
+                // 恢复表单到添加模式
+                submitButton.textContent = 'Add Article';
+                document.getElementById('pdf-file').setAttribute('required', '');
+                delete form.dataset.editIndex;
+                form.onsubmit = originalSubmitHandler;
+                
+                alert('Article updated successfully!');
+            };
+            
+            // 滚动到表单顶部
+            form.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        // 将 renderSelectedCategories 也移到全局作用域
+        window.renderSelectedCategories = function() {
+            const selectedCategoriesContainer = document.getElementById('selected-categories');
+            selectedCategoriesContainer.innerHTML = Array.from(window.selectedCategories || new Set()).map(category => `
+                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                    ${category}
+                    <button type="button" class="remove-selected-category" data-category="${category}">
+                        ×
+                    </button>
+                </span>
+            `).join('');
+        };
+
+        // 将 renderExistingCategories 也移到全局作用域
+        window.renderExistingCategories = function() {
+            const existingCategoriesContainer = document.getElementById('existing-categories');
+            const articles = JSON.parse(localStorage.getItem('articles') || '[]');
+            const categories = new Set(articles.flatMap(article => article.categories || []));
+            
+            existingCategoriesContainer.innerHTML = Array.from(categories).map(category => `
+                <button type="button"
+                    class="existing-category px-3 py-1 rounded-full text-sm font-medium
+                    ${(window.selectedCategories || new Set()).has(category) 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+                    data-category="${category}">
+                    ${category}
+                </button>
+            `).join('');
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('article-form');
+            const categoriesContainer = document.getElementById('categories-container');
+            const existingCategoriesContainer = document.getElementById('existing-categories');
+            const selectedCategoriesContainer = document.getElementById('selected-categories');
+            
+            // 存储选中的标签
+            let selectedCategories = new Set();
+
+            // 从localStorage获取所有已有的标签
+            function getExistingCategories() {
+                const articles = JSON.parse(localStorage.getItem('articles') || '[]');
+                const categories = new Set(articles.flatMap(article => article.categories));
+                return Array.from(categories);
+            }
+
+            // 渲染已有的标签
+            function renderExistingCategories() {
+                const categories = getExistingCategories();
+                existingCategoriesContainer.innerHTML = categories.map(category => `
+                    <button type="button"
+                        class="existing-category px-3 py-1 rounded-full text-sm font-medium
+                        ${selectedCategories.has(category) 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+                        data-category="${category}">
+                        ${category}
+                    </button>
+                `).join('');
+            }
+
+            // 渲染中的标签
+            function renderSelectedCategories() {
+                selectedCategoriesContainer.innerHTML = Array.from(selectedCategories).map(category => `
+                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                        ${category}
+                        <button type="button" class="remove-selected-category" data-category="${category}">
+                            ×
+                        </button>
+                    </span>
+                `).join('');
+            }
+
+            // 添加新的分类输入框
+            function addCategoryInput() {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'flex gap-2';
+                categoryDiv.innerHTML = `
+                    <input type="text" 
+                        class="category-input block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Enter a category">
+                    <button type="button" 
+                        class="remove-category px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                        -
+                    </button>
+                `;
+                categoriesContainer.appendChild(categoryDiv);
+            }
+
+            // 处理已有标签的点击
+            existingCategoriesContainer.addEventListener('click', function(e) {
+                const button = e.target.closest('.existing-category');
+                if (button) {
+                    const category = button.dataset.category;
+                    if (selectedCategories.has(category)) {
+                        selectedCategories.delete(category);
+                    } else {
+                        selectedCategories.add(category);
+                    }
+                    renderExistingCategories();
+                    renderSelectedCategories();
+                }
+            });
+
+            // 处理选中标签的移除
+            selectedCategoriesContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-selected-category')) {
+                    const category = e.target.dataset.category;
+                    selectedCategories.delete(category);
+                    renderExistingCategories();
+                    renderSelectedCategories();
+                }
+            });
+
+            // 其他事件监听器保持不变
+            categoriesContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-category')) {
+                    e.target.parentElement.remove();
+                }
+                if (e.target.classList.contains('add-category')) {
+                    addCategoryInput();
+                }
+            });
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                try {
+                    // 收集所有分类（包括选中的已有标签和新输入的标签）
+                    const categoryInputs = document.querySelectorAll('.category-input');
+                    const newCategories = Array.from(categoryInputs)
+                        .map(input => input.value.trim())
+                        .filter(value => value !== '');
+                    
+                    // 合并所有分类
+                    window.selectedCategories = new Set([...Array.from(window.selectedCategories || []), ...newCategories]);
+
+                    // 创建 FormData 对象
+                    const formData = new FormData(this);
+                    
+                    // 调用处理函数
+                    await window.handleArticleSubmit(formData);
+                    
+                    // 成功后重置表单和UI
+                    this.reset();
+                    window.selectedCategories = new Set();
+                    
+                    // 清理分类输入框
+                    while (categoriesContainer.children.length > 1) {
+                        categoriesContainer.removeChild(categoriesContainer.lastChild);
+                    }
+                    categoriesContainer.querySelector('.category-input').value = '';
+                    
+                    // 重新染UI
+                    renderExistingCategories();
+                    renderSelectedCategories();
+                    renderArticlesList();
+                    
+                    // 验证保存是否成
+                    const savedArticles = window.getArticlesFromStorage();
+                    console.log('Current articles in storage:', savedArticles);
+                    
+                } catch (error) {
+                    console.error('Form submission error:', error);
+                    alert('Error saving article: ' + error.message);
+                }
+            });
+
+            // 初始化渲染
+            renderExistingCategories();
+
+            // 在初始化时渲染文章表
+            renderArticlesList();
+        });
+
+        async function handleBatchUpload() {
+            const excelFile = document.getElementById('excel-file').files[0];
+            if (!excelFile) {
+                alert('Please select an Excel file');
+                return;
+            }
+
+            try {
+                const data = await readExcelFile(excelFile);
+                if (validateData(data)) {
+                    showPreview(data);
+                }
+            } catch (error) {
+                alert('Error reading Excel file: ' + error.message);
+            }
+        }
+
+        function readExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const data = XLSX.utils.sheet_to_json(worksheet);
+                        resolve(data);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsBinaryString(file);
+            });
+        }
+
+        function validateData(data) {
+            const requiredFields = ['Title', 'Authors', 'Date', 'Abstract', 'PDF URL'];
+            const missingFields = [];
+
+            if (data.length === 0) {
+                alert('Excel file is empty');
+                return false;
+            }
+
+            const firstRow = data[0];
+            requiredFields.forEach(field => {
+                if (!(field in firstRow)) {
+                    missingFields.push(field);
+                }
+            });
+
+            if (missingFields.length > 0) {
+                alert(`Missing required columns: ${missingFields.join(', ')}`);
+                return false;
+            }
+
+            return true;
+        }
+
+        function showPreview(data) {
+            const previewArea = document.getElementById('preview-area');
+            const previewTable = document.getElementById('preview-table');
+            previewArea.classList.remove('hidden');
+
+            // 修改表头，添加 Categories 列
+            const tableHeader = `
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Authors</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categories</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+            `;
+
+            // 修改表格内容，显示 Categories
+            const tableBody = data.map((row, index) => {
+                const categories = row.Categories ? row.Categories.split(',').map(c => c.trim()) : [];
+                const categoriesHtml = categories.map(category => 
+                    `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1">
+                        ${category}
+                    </span>`
+                ).join('');
+
+                return `
+                    <tr>
+                        <td class="px-6 py-4 text-sm text-gray-900">${row.Title}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${row.Authors}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="flex flex-wrap gap-1">
+                                ${categoriesHtml || '<span class="text-gray-500">No categories</span>'}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${row.Date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Ready
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            previewTable.innerHTML = tableHeader + `<tbody class="bg-white divide-y divide-gray-200">${tableBody}</tbody>`;
+
+            // 添加确认按钮
+            if (!document.getElementById('confirm-batch-upload')) {
+                const confirmButton = document.createElement('button');
+                confirmButton.id = 'confirm-batch-upload';
+                confirmButton.className = 'mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
+                confirmButton.textContent = 'Confirm Upload';
+                confirmButton.onclick = () => confirmBatchUpload(data);
+                previewArea.appendChild(confirmButton);
+            }
+        }
+
+        async function confirmBatchUpload(data) {
+            try {
+                const articles = window.getArticlesFromStorage();
+                
+                // 获取当前最大 ID
+                const maxId = articles.reduce((max, article) => Math.max(max, article.id || 0), 0);
+                
+                // 转换数据格式，添加数据验证和默认值
+                const newArticles = data.map((row, index) => ({
+                    id: maxId + index + 1, // 确保 ID 不重复
+                    title: row.Title || '',
+                    authors: row.Authors || '',
+                    categories: row.Categories ? row.Categories.split(',').map(c => c.trim()) : [],
+                    date: row.Date || '',
+                    abstract: row.Abstract || '',
+                    pdfUrl: row['PDF URL'] || '',
+                    fileName: (row['PDF URL'] || '').split('/').pop() || 'document.pdf'
+                }));
+
+                // 验证必填字段
+                const invalidArticles = newArticles.filter(article => 
+                    !article.title || !article.authors || !article.date || !article.abstract || !article.pdfUrl
+                );
+
+                if (invalidArticles.length > 0) {
+                    const message = `Warning: ${invalidArticles.length} articles have missing required fields. Continue anyway?`;
+                    if (!confirm(message)) {
+                        return;
+                    }
+                }
+
+                // 添加新文章
+                const updatedArticles = [...articles, ...newArticles];
+                window.saveArticlesToStorage(updatedArticles);
+
+                // 验证保存是否成功
+                const savedArticles = window.getArticlesFromStorage();
+                if (savedArticles.length !== updatedArticles.length) {
+                    throw new Error('Articles were not saved properly');
+                }
+
+                // 更新显示
+                renderArticlesList();
+                renderExistingCategories();
+
+                // 重置上传区域
+                document.getElementById('excel-file').value = '';
+                document.getElementById('preview-area').classList.add('hidden');
+                
+                console.log('Batch upload completed successfully:', newArticles.length, 'articles added');
+                alert('Batch upload completed successfully!');
+            } catch (error) {
+                console.error('Batch upload error:', error);
+                alert('Error during batch upload: ' + error.message);
+            }
+        }
+
+        // 添加全局变量
+        window.isSelectMode = false;
+        window.selectedArticles = new Set();
+
+        // 切换选择模式
+        window.toggleSelectMode = function() {
+            window.isSelectMode = !window.isSelectMode;
+            const selectModeBtn = document.getElementById('select-mode-btn');
+            const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+            
+            if (window.isSelectMode) {
+                selectModeBtn.textContent = 'Cancel Selection';
+                selectModeBtn.classList.add('bg-gray-200');
+                deleteSelectedBtn.classList.remove('hidden');
+            } else {
+                selectModeBtn.textContent = 'Select Mode';
+                selectModeBtn.classList.remove('bg-gray-200');
+                deleteSelectedBtn.classList.add('hidden');
+                window.selectedArticles.clear();
+            }
+            renderArticlesList();
+        };
+
+        // 选择/取消选择文章
+        window.toggleArticleSelection = function(index) {
+            if (window.selectedArticles.has(index)) {
+                window.selectedArticles.delete(index);
+            } else {
+                window.selectedArticles.add(index);
+            }
+            renderArticlesList();
+        };
+
+        // 修改批量删除函数
+        window.deleteSelected = function() {
+            if (window.selectedArticles.size === 0) {
+                alert('Please select articles to delete');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete ${window.selectedArticles.size} articles?`)) {
+                const articles = loadArticles();
+                const selectedIds = Array.from(window.selectedArticles);
+                const newArticles = articles.filter(article => !selectedIds.includes(article.id));
+                
+                window.saveArticlesToStorage(newArticles);
+                
+                window.selectedArticles.clear();
+                window.isSelectMode = false;
+                document.getElementById('select-mode-btn').textContent = 'Select Mode';
+                document.getElementById('select-mode-btn').classList.remove('bg-gray-200');
+                document.getElementById('delete-selected-btn').classList.add('hidden');
+                
+                renderArticlesList();
+                renderExistingCategories();
+            }
+        };
+
+        // 修改 renderArticlesList 函数
+        function renderArticlesList() {
+            const articlesList = document.getElementById('articles-list');
+            const articles = window.getArticlesFromStorage();
+            
+            if (articles.length === 0) {
+                articlesList.innerHTML = `
+                    <p class="text-gray-500 text-center py-8">No articles yet</p>
+                `;
+                return;
+            }
+
+            articlesList.innerHTML = articles.map(article => {
+                const title = String(article.title || '');
+                const authors = String(article.authors || '');
+                const date = String(article.date || '');
+                const abstract = String(article.abstract || '');
+                const categories = Array.isArray(article.categories) ? article.categories : [];
+
+                return `
+                    <div class="border rounded-lg p-6 hover:shadow-md transition-shadow ${
+                        window.selectedArticles.has(article.id) ? 'bg-blue-50 border-blue-300' : ''
+                    }">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-grow">
+                                ${window.isSelectMode ? `
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <input 
+                                            type="checkbox" 
+                                            ${window.selectedArticles.has(article.id) ? 'checked' : ''}
+                                            onchange="toggleArticleSelection(${article.id})"
+                                            class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                        >
+                                    </div>
+                                ` : ''}
+                                <h3 class="text-xl font-semibold text-gray-900 mb-2">${title}</h3>
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    ${categories.map(category => `
+                                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                                            ${String(category)}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                                <p class="text-gray-600 mb-2">Authors: ${authors}</p>
+                                <p class="text-gray-600 mb-2">Date: ${date}</p>
+                                <p class="text-gray-700 line-clamp-3">${abstract}</p>
+                            </div>
+                            ${!window.isSelectMode ? `
+                                <div class="flex gap-2">
+                                    <button 
+                                        class="text-red-600 hover:text-red-800 p-2"
+                                        onclick="window.adminFunctions.deleteArticle(${article.id})"
+                                    >
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+                                            />
+                                        </svg>
+                                    </button>
+                                    <button 
+                                        class="text-blue-600 hover:text-blue-800 p-2"
+                                        onclick="window.editArticle(${article.id})"
+                                    >
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
+                                            />
+                                        </svg>
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html> 
