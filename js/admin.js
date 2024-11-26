@@ -3,6 +3,89 @@ window.toggleSelectMode = toggleSelectMode;
 window.deleteSelected = deleteSelected;
 window.editArticle = editArticle;
 
+// 在文件开头添加全局变量
+window.isSelectMode = false;
+window.selectedArticles = new Set();
+
+// 修改 toggleSelectMode 函数
+function toggleSelectMode() {
+    window.isSelectMode = !window.isSelectMode;
+    const selectModeBtn = document.getElementById('select-mode-btn');
+    const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+    
+    if (window.isSelectMode) {
+        selectModeBtn.textContent = 'Cancel Selection';
+        selectModeBtn.classList.add('bg-gray-200');
+        deleteSelectedBtn.classList.remove('hidden');
+    } else {
+        selectModeBtn.textContent = 'Select Mode';
+        selectModeBtn.classList.remove('bg-gray-200');
+        deleteSelectedBtn.classList.add('hidden');
+        window.selectedArticles.clear();
+    }
+    renderArticlesList();
+}
+
+// 修改 toggleArticleSelection 函数
+function toggleArticleSelection(articleId) {
+    if (window.selectedArticles.has(articleId)) {
+        window.selectedArticles.delete(articleId);
+    } else {
+        window.selectedArticles.add(articleId);
+    }
+    renderArticlesList();
+}
+
+// 修改 deleteSelected 函数
+function deleteSelected() {
+    if (window.selectedArticles.size === 0) {
+        alert('Please select articles to delete');
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete ${window.selectedArticles.size} articles?`)) {
+        const articles = window.getArticlesFromStorage();
+        const selectedIds = Array.from(window.selectedArticles);
+        const newArticles = articles.filter(article => !selectedIds.includes(article.id));
+        
+        window.saveArticlesToStorage(newArticles);
+        
+        window.selectedArticles.clear();
+        window.isSelectMode = false;
+        document.getElementById('select-mode-btn').textContent = 'Select Mode';
+        document.getElementById('select-mode-btn').classList.remove('bg-gray-200');
+        document.getElementById('delete-selected-btn').classList.add('hidden');
+        
+        renderArticlesList();
+        renderExistingCategories();
+    }
+}
+
+// 添加删除文章功能
+window.adminFunctions = {
+    deleteArticle: function(articleId) {
+        try {
+            if (confirm('Are you sure you want to delete this article?')) {
+                const articles = window.getArticlesFromStorage();
+                const updatedArticles = articles.filter(article => article.id !== articleId);
+                
+                // 保存更新后的文章列表
+                window.saveArticlesToStorage(updatedArticles);
+                
+                // 立即重新渲染
+                renderArticlesList();
+                renderExistingCategories();
+                
+                console.log('Article deleted successfully:', articleId);
+            }
+        } catch (error) {
+            console.error('Error deleting article:', error);
+            alert('Error deleting article: ' + error.message);
+        }
+    },
+    // ... 其他函数保持不变
+};
+
 // 添加文件上传函数
 async function uploadFileToGitHub(file, fileName) {
     try {
