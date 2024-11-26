@@ -173,6 +173,56 @@
         </div>
     </main>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化选中的分类集合
+            window.selectedCategories = new Set();
+            window.isSelectMode = false;
+            
+            // 表单提交事件监听
+            const form = document.getElementById('article-form');
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    const formData = new FormData(this);
+                    await window.handleArticleSubmit(formData);
+                } catch (error) {
+                    console.error('Form submission error:', error);
+                }
+            });
+
+            // 处理已有分类的点击
+            document.getElementById('existing-categories').addEventListener('click', function(e) {
+                const button = e.target.closest('.existing-category');
+                if (button) {
+                    const category = button.dataset.category;
+                    if (window.selectedCategories.has(category)) {
+                        window.selectedCategories.delete(category);
+                    } else {
+                        window.selectedCategories.add(category);
+                    }
+                    window.renderExistingCategories();
+                    window.renderSelectedCategories();
+                }
+            });
+
+            // 处理移除选中分类
+            document.getElementById('selected-categories').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-selected-category')) {
+                    const category = e.target.dataset.category;
+                    window.selectedCategories.delete(category);
+                    window.renderExistingCategories();
+                    window.renderSelectedCategories();
+                }
+            });
+
+            // 初始化渲染
+            window.renderExistingCategories();
+            window.renderArticlesList();
+            
+            console.log('DOMContentLoaded: Event listeners initialized');
+        });
+    </script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/data.js"></script>

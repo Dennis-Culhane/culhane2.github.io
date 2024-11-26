@@ -1,7 +1,14 @@
+window.handleArticleSubmit = handleArticleSubmit;
+window.renderArticlesList = renderArticlesList;
+window.renderExistingCategories = renderExistingCategories;
+window.renderSelectedCategories = renderSelectedCategories;
 window.toggleArticleSelection = toggleArticleSelection;
 window.toggleSelectMode = toggleSelectMode;
 window.deleteSelected = deleteSelected;
 window.editArticle = editArticle;
+window.adminFunctions = {
+    deleteArticle: deleteArticle
+};
 
 // 在文件开头添加全局变量
 window.isSelectMode = false;
@@ -145,6 +152,11 @@ window.handleArticleSubmit = async function(formData) {
             throw new Error('Please fill in all required fields');
         }
 
+        console.log('Starting file upload to GitHub...');
+        // 先上传文件到 GitHub
+        const fileUrl = await uploadFileToGitHub(pdfFile, pdfFile.name);
+        console.log('File uploaded successfully, URL:', fileUrl);
+
         // 创建文章对象
         const newArticle = {
             id: Date.now(), // 使用时间戳作为唯一ID
@@ -154,7 +166,7 @@ window.handleArticleSubmit = async function(formData) {
             categories: Array.from(window.selectedCategories || []),
             abstract: abstract,
             fileName: pdfFile.name,
-            pdfUrl: `${GITHUB_REPO_URL}/papers/${pdfFile.name}`
+            pdfUrl: fileUrl  // 使用上传后返回的 URL
         };
 
         // 获取现有文章
@@ -172,6 +184,11 @@ window.handleArticleSubmit = async function(formData) {
         // 重新渲染文章列表
         renderArticlesList();
         renderExistingCategories();
+        
+        // 重置表单
+        document.getElementById('article-form').reset();
+        window.selectedCategories = new Set();
+        renderSelectedCategories();
         
         alert('Article added successfully!');
         return newArticle;
@@ -205,4 +222,111 @@ function saveArticle(article) {
         console.error('Error in saveArticle:', error);
         throw error;
     }
+}
+
+// 添加 renderArticlesList 函数
+function renderArticlesList() {
+    const articlesList = document.getElementById('articles-list');
+    const articles = window.getArticlesFromStorage();
+    
+    if (!articles || articles.length === 0) {
+        articlesList.innerHTML = `
+            <p class="text-gray-500 text-center py-8">No articles yet</p>
+        `;
+        return;
+    }
+
+    articlesList.innerHTML = articles.map(article => {
+        const title = String(article.title || '');
+        const authors = String(article.authors || '');
+        const date = String(article.date || '');
+        const abstract = String(article.abstract || '');
+        const categories = Array.isArray(article.categories) ? article.categories : [];
+
+        return `
+            <div class="border rounded-lg p-6 hover:shadow-md transition-shadow ${
+                window.selectedArticles.has(article.id) ? 'bg-blue-50 border-blue-300' : ''
+            }">
+                <div class="flex justify-between items-start">
+                    <div class="flex-grow">
+                        ${window.isSelectMode ? `
+                            <div class="flex items-center gap-3 mb-3">
+                                <input 
+                                    type="checkbox" 
+                                    ${window.selectedArticles.has(article.id) ? 'checked' : ''}
+                                    onchange="toggleArticleSelection(${article.id})"
+                                    class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                >
+                            </div>
+                        ` : ''}
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">${title}</h3>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            ${categories.map(category => `
+                                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                                    ${String(category)}
+                                </span>
+                            `).join('')}
+                        </div>
+                        <p class="text-gray-600 mb-2">Authors: ${authors}</p>
+                        <p class="text-gray-600 mb-2">Date: ${date}</p>
+                        <p class="text-gray-700 line-clamp-3">${abstract}</p>
+                    </div>
+                    ${!window.isSelectMode ? `
+                        <div class="flex gap-2">
+                            <button 
+                                class="text-red-600 hover:text-red-800 p-2"
+                                onclick="window.adminFunctions.deleteArticle(${article.id})"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+                                    />
+                                </svg>
+                            </button>
+                            <button 
+                                class="text-blue-600 hover:text-blue-800 p-2"
+                                onclick="window.editArticle(${article.id})"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// 添加这些函数到文件中
+function renderExistingCategories() {
+    const existingCategoriesContainer = document.getElementById('existing-categories');
+    const articles = window.getArticlesFromStorage();
+    const categories = new Set(articles.flatMap(article => article.categories || []));
+    
+    existingCategoriesContainer.innerHTML = Array.from(categories).map(category => `
+        <button type="button"
+            class="existing-category px-3 py-1 rounded-full text-sm font-medium
+            ${(window.selectedCategories || new Set()).has(category) 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+            data-category="${category}">
+            ${category}
+        </button>
+    `).join('');
+}
+
+function renderSelectedCategories() {
+    const selectedCategoriesContainer = document.getElementById('selected-categories');
+    selectedCategoriesContainer.innerHTML = Array.from(window.selectedCategories || new Set()).map(category => `
+        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+            ${category}
+            <button type="button" class="remove-selected-category" data-category="${category}">
+                ×
+            </button>
+        </span>
+    `).join('');
 }

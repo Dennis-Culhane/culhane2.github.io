@@ -6,5 +6,5 @@ const GITHUB_CONFIG = {
     BRANCH: 'main'
 };
 
-// 导出 GITHUB_REPO_URL 供其他文件使用
-const GITHUB_REPO_URL = 'https://dennis-culhane.github.io/culhane2.github.io';
+// 修改 URL 格式
+const GITHUB_REPO_URL = `https://raw.githubusercontent.com/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}/${GITHUB_CONFIG.BRANCH}`;
