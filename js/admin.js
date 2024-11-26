@@ -86,7 +86,7 @@ window.adminFunctions = {
     // ... 其他函数保持不变
 };
 
-// 添加文件上传函数
+// 修改文件上传函数
 async function uploadFileToGitHub(file, fileName) {
     try {
         // 将文件转换为 Base64
@@ -96,23 +96,24 @@ async function uploadFileToGitHub(file, fileName) {
             reader.readAsDataURL(file);
         });
 
+        console.log('Starting file upload...');
+        
         // GitHub API 配置
         const apiUrl = `https://api.github.com/repos/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}/contents/papers/${fileName}`;
         
-        // 添加错误日志
-        console.log('Attempting to upload file to:', apiUrl);
+        console.log('Uploading to:', apiUrl);
         
         const response = await fetch(apiUrl, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
                 'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github.v3+json'  // 添加 API 版本
+                'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify({
                 message: `Upload paper: ${fileName}`,
                 content: base64Content,
-                branch: 'main'  // 指定分支
+                branch: GITHUB_CONFIG.BRANCH
             })
         });
 
@@ -122,14 +123,11 @@ async function uploadFileToGitHub(file, fileName) {
             throw new Error(`Failed to upload file: ${errorData.message}`);
         }
 
-        const responseData = await response.json();
-        console.log('Upload successful:', responseData);
-
-        // 返回文件的 GitHub Pages URL
-        return `https://dennis-culhane.github.io/culhane2.github.io/papers/${fileName}`;
+        console.log('File uploaded successfully');
+        return `${GITHUB_REPO_URL}/papers/${fileName}`;
     } catch (error) {
         console.error('Error uploading file:', error);
-        throw new Error(`Failed to upload file: ${error.message}`);
+        throw error;
     }
 }
 
