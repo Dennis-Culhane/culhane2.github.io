@@ -239,6 +239,64 @@
             }
         };
 
+        // 添加确认上传函数
+        window.confirmBatchUpload = async function(data) {
+            try {
+                const articles = await window.getArticlesFromStorage();
+                
+                // 获取当前最大 ID
+                const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
+                
+                // 转换数据格式，添加数据验证和默认值
+                const newArticles = data.map((row, index) => ({
+                    id: maxId + index + 1,
+                    title: row.Title || '',
+                    authors: row.Authors || '',
+                    categories: row.Categories ? row.Categories.split(',').map(c => c.trim()) : [],
+                    date: row.Date || '',
+                    abstract: row.Abstract || '',
+                    pdfUrl: row['PDF URL'] || '',
+                    fileName: row['PDF URL'] ? row['PDF URL'].split('/').pop() : null
+                }));
+
+                // 验证必填字段
+                const invalidArticles = newArticles.filter(article => 
+                    !article.title || !article.authors || !article.date || !article.abstract || !article.pdfUrl
+                );
+
+                if (invalidArticles.length > 0) {
+                    const message = `Warning: ${invalidArticles.length} articles have missing required fields. Continue anyway?`;
+                    if (!confirm(message)) {
+                        return;
+                    }
+                }
+
+                // 添加新文章
+                const updatedArticles = [...articles, ...newArticles];
+                await window.saveArticlesToStorage(updatedArticles);
+
+                // 验证保存是否成功
+                const savedArticles = await window.getArticlesFromStorage();
+                if (savedArticles.length !== updatedArticles.length) {
+                    throw new Error('Articles were not saved properly');
+                }
+
+                // 更新显示
+                window.renderArticlesList();
+                window.renderExistingCategories();
+
+                // 重置上传区域
+                document.getElementById('excel-file').value = '';
+                document.getElementById('preview-area').classList.add('hidden');
+                
+                console.log('Batch upload completed successfully:', newArticles.length, 'articles added');
+                alert('Batch upload completed successfully!');
+            } catch (error) {
+                console.error('Batch upload error:', error);
+                alert('Error during batch upload: ' + error.message);
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', async function() {
             // 初始化
             window.selectedCategories = new Set();
