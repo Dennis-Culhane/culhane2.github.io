@@ -60,7 +60,8 @@
                     <div id="categories-container">
                         <input type="text" 
                             class="category-input mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Add a category">
+                            placeholder="Type a category and press Enter"
+                            onkeypress="if(event.key === 'Enter') { event.preventDefault(); handleCategoryInput(this); }">
                     </div>
                 </div>
 
@@ -297,19 +298,154 @@
             }
         };
 
+        // 添加文章提交处理函数
+        window.handleArticleSubmit = async function(formData) {
+            try {
+                // 验证表单数据
+                const title = document.getElementById('title').value;
+                const authors = document.getElementById('authors').value;
+                const date = document.getElementById('date').value;
+                const abstract = document.getElementById('abstract').value;
+                const pdfFile = document.getElementById('pdf-file').files[0];
+
+                if (!title || !authors || !date || !abstract || !pdfFile) {
+                    throw new Error('Please fill in all required fields');
+                }
+
+                console.log('Starting file upload...');
+
+                // 创建文章对象
+                const newArticle = {
+                    title: title,
+                    authors: authors,
+                    date: date,
+                    categories: Array.from(window.selectedCategories || []),
+                    abstract: abstract,
+                    fileName: pdfFile.name,
+                    pdfUrl: `${GITHUB_RAW_URL}/papers/${pdfFile.name}`
+                };
+
+                // 获取现有文章
+                const articles = await window.getArticlesFromStorage();
+                const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
+                newArticle.id = maxId + 1;
+
+                // 添加新文章
+                articles.push(newArticle);
+                
+                // 保存到 GitHub
+                await window.saveArticlesToStorage(articles);
+                
+                console.log('Article saved successfully:', newArticle);
+
+                // 重新渲染文章列表
+                window.renderArticlesList();
+                window.renderExistingCategories();
+                
+                // 重置表单
+                document.getElementById('article-form').reset();
+                window.selectedCategories = new Set();
+                window.renderSelectedCategories();
+                
+                alert('Article added successfully!');
+                return newArticle;
+            } catch (error) {
+                console.error('Error saving article:', error);
+                alert('Error saving article: ' + error.message);
+                throw error;
+            }
+        };
+
+        // 添加分类管理函数
+        window.handleCategoryInput = function(input) {
+            if (event.key === 'Enter' && input.value.trim()) {
+                window.selectedCategories.add(input.value.trim());
+                input.value = '';
+                window.renderSelectedCategories();
+                window.renderExistingCategories();
+            }
+        };
+
+        // 修改渲染已有分类函数
+        window.renderExistingCategories = async function() {
+            const existingCategoriesContainer = document.getElementById('existing-categories');
+            const articles = await window.getArticlesFromStorage();
+            
+            // 获取所有已存在的分类
+            const categories = new Set(articles.flatMap(article => article.categories || []));
+            
+            existingCategoriesContainer.innerHTML = Array.from(categories).map(category => `
+                <button type="button"
+                    class="existing-category px-3 py-1 rounded-full text-sm font-medium
+                    ${window.selectedCategories.has(category) 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+                    onclick="toggleCategory('${category}')"
+                    data-category="${category}">
+                    ${category}
+                </button>
+            `).join('');
+        };
+
+        // 修改渲染选中分类函数
+        window.renderSelectedCategories = function() {
+            const selectedCategoriesContainer = document.getElementById('selected-categories');
+            selectedCategoriesContainer.innerHTML = Array.from(window.selectedCategories).map(category => `
+                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                    ${category}
+                    <button type="button" 
+                        onclick="removeCategory('${category}')"
+                        class="text-blue-600 hover:text-blue-800">
+                        ×
+                    </button>
+                </span>
+            `).join('');
+        };
+
+        // 添加切换分类函数
+        window.toggleCategory = function(category) {
+            if (window.selectedCategories.has(category)) {
+                window.selectedCategories.delete(category);
+            } else {
+                window.selectedCategories.add(category);
+            }
+            window.renderSelectedCategories();
+            window.renderExistingCategories();
+        };
+
+        // 添加移除分类函数
+        window.removeCategory = function(category) {
+            window.selectedCategories.delete(category);
+            window.renderSelectedCategories();
+            window.renderExistingCategories();
+        };
+
+        // 修改 DOMContentLoaded 事件监听器
         document.addEventListener('DOMContentLoaded', async function() {
             // 初始化
             window.selectedCategories = new Set();
             window.isSelectMode = false;
 
             try {
-                // 获取初始数据
+                // 获取初始数据并渲染
                 const articles = await window.getArticlesFromStorage();
                 console.log('Initial articles loaded:', articles);
                 
                 // 渲染界面
                 window.renderArticlesList();
                 window.renderExistingCategories();
+                window.renderSelectedCategories();
+
+                // 添加分类输入框事件监听
+                const categoryInputs = document.querySelectorAll('.category-input');
+                categoryInputs.forEach(input => {
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            window.handleCategoryInput(input);
+                        }
+                    });
+                });
             } catch (error) {
                 console.error('Error initializing admin page:', error);
             }
@@ -318,6 +454,7 @@
             const form = document.getElementById('article-form');
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                console.log('Form submitted');
                 try {
                     const formData = new FormData(this);
                     await window.handleArticleSubmit(formData);
@@ -328,6 +465,7 @@
 
             // 批量上传事件
             document.getElementById('batch-upload-btn').addEventListener('click', async function() {
+                console.log('Batch upload button clicked');
                 const excelFile = document.getElementById('excel-file').files[0];
                 if (!excelFile) {
                     alert('Please select an Excel file');
