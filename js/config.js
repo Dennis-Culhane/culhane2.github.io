@@ -1,6 +1,9 @@
+// 加载环境变量
+require('dotenv').config();
+
 // GitHub 配置
 const GITHUB_CONFIG = {
-    TOKEN: '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',
+    TOKEN: process.env.GITHUB_TOKEN,  // 从环境变量读取token
     REPO_OWNER: 'Dennis-Culhane',
     REPO_NAME: 'culhane2.github.io',
     BRANCH: 'main'
