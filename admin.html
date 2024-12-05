@@ -274,13 +274,17 @@
 
                 // 添加新文章
                 const updatedArticles = [...articles, ...newArticles];
-                await window.saveArticlesToStorage(updatedArticles);
+                
+                // 使用 UTF-8 编码处理数据
+                const content = new TextEncoder().encode(
+                    JSON.stringify(updatedArticles, null, 2)
+                );
+                const base64Content = btoa(
+                    String.fromCharCode.apply(null, new Uint8Array(content))
+                );
 
-                // 验证保存是否成功
-                const savedArticles = await window.getArticlesFromStorage();
-                if (savedArticles.length !== updatedArticles.length) {
-                    throw new Error('Articles were not saved properly');
-                }
+                // 保存到 GitHub
+                await window.saveArticlesToStorage(updatedArticles, base64Content);
 
                 // 更新显示
                 window.renderArticlesList();
