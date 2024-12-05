@@ -151,74 +151,72 @@
     <script src="js/data.js"></script>
     <script src="js/admin.js"></script>
     <script>
-        // 添加全局变量
+        // 初始化全局变量
         window.selectedCategories = new Set();
         window.isSelectMode = false;
 
-        // 修改 handleArticleSubmit 函数
-        window.handleArticleSubmit = async function(formData) {
-            try {
-                // 验证表单数据
-                const title = document.getElementById('title').value;
-                const authors = document.getElementById('authors').value;
-                const date = document.getElementById('date').value;
-                const abstract = document.getElementById('abstract').value;
-                const pdfFile = document.getElementById('pdf-file').files[0];
-
-                if (!title || !authors || !date || !abstract || !pdfFile) {
-                    throw new Error('Please fill in all required fields');
-                }
-
-                console.log('Starting article save process...');
-                console.log('Form data:', { title, authors, date, abstract, fileName: pdfFile.name });
-                console.log('Selected categories:', Array.from(window.selectedCategories));
-
-                // 创建文章对象
-                const newArticle = {
-                    title: title,
-                    authors: authors,
-                    date: date,
-                    categories: Array.from(window.selectedCategories || []),
-                    abstract: abstract,
-                    fileName: pdfFile.name,
-                    pdfUrl: `${GITHUB_RAW_URL}/papers/${pdfFile.name}`
+        // 文件读取函数
+        window.readExcelFile = function(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = e.target.result;
+                        const workbook = XLSX.read(data, { type: 'binary' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                        resolve(jsonData);
+                    } catch (error) {
+                        reject(error);
+                    }
                 };
+                reader.onerror = reject;
+                reader.readAsBinaryString(file);
+            });
+        };
 
-                // 获取现有文章
-                console.log('Fetching existing articles...');
-                const articles = await window.getArticlesFromStorage();
-                console.log('Current articles count:', articles.length);
+        // 数据验证函数
+        window.validateData = function(data) {
+            if (!Array.isArray(data) || data.length === 0) {
+                alert('No valid data found in Excel file');
+                return false;
+            }
+            return true;
+        };
 
-                const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
-                newArticle.id = maxId + 1;
-                console.log('Generated new article ID:', newArticle.id);
+        // 显示预览函数
+        window.showPreview = function(data) {
+            const previewArea = document.getElementById('preview-area');
+            const previewTable = document.getElementById('preview-table');
+            previewArea.classList.remove('hidden');
 
-                // 添加新文章��保存
-                articles.push(newArticle);
-                console.log('Saving updated articles array...');
-                await window.saveArticlesToStorage(articles);
-                
-                console.log('Article saved successfully:', newArticle);
+            previewTable.innerHTML = data.map(row => `
+                <tr>
+                    <td class="px-6 py-4 text-sm text-gray-900">${row.Title || ''}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${row.Authors || ''}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${row.Categories || ''}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${row.Date || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Ready
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
 
-                // 重新渲染章列表
-                await window.renderArticlesList();
-                await window.renderExistingCategories();
-                
-                // 重置表单
-                document.getElementById('article-form').reset();
-                window.selectedCategories.clear();
-                window.renderSelectedCategories();
-                
-                alert('Article added successfully!');
-                return newArticle;
-            } catch (error) {
-                console.error('Error in handleArticleSubmit:', error);
-                alert('Error saving article: ' + error.message);
-                throw error;
+            // 添加确认按钮
+            if (!document.getElementById('confirm-batch-upload')) {
+                const confirmButton = document.createElement('button');
+                confirmButton.id = 'confirm-batch-upload';
+                confirmButton.className = 'mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
+                confirmButton.textContent = 'Confirm Upload';
+                confirmButton.onclick = () => window.confirmBatchUpload(data);
+                previewArea.appendChild(confirmButton);
             }
         };
 
-        // 确保在 DOMContentLoaded 时初始化所有功能
+        // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', async function() {
             try {
                 console.log('Initializing admin page...');
@@ -232,29 +230,23 @@
                 await window.renderExistingCategories();
                 window.renderSelectedCategories();
 
-                // 表单提交���件
+                // 表单提交事件
                 const form = document.getElementById('article-form');
                 form.addEventListener('submit', async function(e) {
-                    e.preventDefault(); // 阻止表单默认提交行为
+                    e.preventDefault();
                     console.log('Form submitted');
                     try {
                         const formData = new FormData(this);
                         await window.handleArticleSubmit(formData);
-                        
-                        // 重置表单和更新界面
-                        this.reset();
-                        window.selectedCategories.clear();
-                        await window.renderArticlesList();
-                        await window.renderExistingCategories();
-                        window.renderSelectedCategories();
                     } catch (error) {
                         console.error('Form submission error:', error);
                     }
                 });
 
-                // 添加批量上传相关函数
-                async function handleBatchUpload() {
-                    console.log('Handling batch upload...');
+                // 批量上传事件
+                const batchUploadBtn = document.getElementById('batch-upload-btn');
+                batchUploadBtn.addEventListener('click', async function() {
+                    console.log('Batch upload button clicked');
                     const excelFile = document.getElementById('excel-file').files[0];
                     if (!excelFile) {
                         alert('Please select an Excel file');
@@ -262,27 +254,16 @@
                     }
 
                     try {
-                        console.log('Reading Excel file...');
                         const data = await window.readExcelFile(excelFile);
                         console.log('Excel data:', data);
-                        
-                        if (validateData(data)) {
-                            showPreview(data);
+                        if (window.validateData(data)) {
+                            window.showPreview(data);
                         }
                     } catch (error) {
                         console.error('Error reading Excel file:', error);
                         alert('Error reading Excel file: ' + error.message);
                     }
-                }
-
-                // 添加批量上传按钮事件监听
-                const batchUploadBtn = document.getElementById('batch-upload-btn');
-                if (batchUploadBtn) {
-                    console.log('Adding batch upload button listener');
-                    batchUploadBtn.addEventListener('click', handleBatchUpload);
-                } else {
-                    console.error('Batch upload button not found');
-                }
+                });
 
                 console.log('Admin page initialized successfully');
             } catch (error) {
@@ -290,230 +271,6 @@
                 alert('Error initializing page: ' + error.message);
             }
         });
-
-        // 添加文件读取函数
-        window.readExcelFile = async function(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const workbook = XLSX.read(e.target.result, { type: 'binary' });
-                        const firstSheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[firstSheetName];
-                        const data = XLSX.utils.sheet_to_json(worksheet);
-                        resolve(data);
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                reader.onerror = reject;
-                reader.readAsBinaryString(file);
-            });
-        };
-
-        // 添加数据验证函数
-        window.validateData = function(data) {
-            const requiredFields = ['Title', 'Authors', 'Date', 'Abstract'];
-            const missingFields = [];
-
-            if (data.length === 0) {
-                alert('Excel file is empty');
-                return false;
-            }
-
-            const firstRow = data[0];
-            requiredFields.forEach(field => {
-                if (!(field in firstRow)) {
-                    missingFields.push(field);
-                }
-            });
-
-            if (missingFields.length > 0) {
-                alert(`Missing required columns: ${missingFields.join(', ')}`);
-                return false;
-            }
-
-            return true;
-        };
-
-        // 添加预览显示函数
-        window.showPreview = function(data) {
-            const previewArea = document.getElementById('preview-area');
-            const previewTable = document.getElementById('preview-table');
-            previewArea.classList.remove('hidden');
-
-            previewTable.innerHTML = data.map((row, index) => {
-                const categories = row.Categories ? row.Categories.split(',').map(c => c.trim()) : [];
-                const categoriesHtml = categories.map(category => 
-                    `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1">
-                        ${category}
-                    </span>`
-                ).join('');
-
-                return `
-                    <tr>
-                        <td class="px-6 py-4 text-sm text-gray-900">${row.Title}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500">${row.Authors}</td>
-                        <td class="px-6 py-4 text-sm">
-                            <div class="flex flex-wrap gap-1">
-                                ${categoriesHtml || '<span class="text-gray-500">No categories</span>'}
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-500">${row.Date}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Ready
-                            </span>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            // 添加确认按钮
-            if (!document.getElementById('confirm-batch-upload')) {
-                const confirmButton = document.createElement('button');
-                confirmButton.id = 'confirm-batch-upload';
-                confirmButton.className = 'mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
-                confirmButton.textContent = 'Confirm Upload';
-                confirmButton.onclick = () => window.confirmBatchUpload(data);
-                previewArea.appendChild(confirmButton);
-            }
-        };
-
-        // 添加 UTF-8 编码辅助函数
-        function utf8ToBase64(str) {
-            try {
-                return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-                    function toSolidBytes(match, p1) {
-                        return String.fromCharCode('0x' + p1);
-                    }));
-            } catch (error) {
-                console.error('Error in utf8ToBase64:', error);
-                throw new Error('Failed to encode data');
-            }
-        }
-
-        // 修改 confirmBatchUpload 函数
-        window.confirmBatchUpload = async function(data) {
-            try {
-                const articles = await window.getArticlesFromStorage();
-                
-                // 获取当前最大 ID
-                const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
-                
-                // 转换数据格式，添加数据验证和默认值
-                const newArticles = data.map((row, index) => ({
-                    id: maxId + index + 1,
-                    title: row.Title || '',
-                    authors: row.Authors || '',
-                    categories: row.Categories ? row.Categories.split(',').map(c => c.trim()) : [],
-                    date: row.Date || '',
-                    abstract: row.Abstract || '',
-                    pdfUrl: row['PDF URL'] || '',
-                    fileName: row['PDF URL'] ? row['PDF URL'].split('/').pop() : null
-                }));
-
-                // 验证必填字段
-                const invalidArticles = newArticles.filter(article => 
-                    !article.title || !article.authors || !article.date || !article.abstract || !article.pdfUrl
-                );
-
-                if (invalidArticles.length > 0) {
-                    const message = `Warning: ${invalidArticles.length} articles have missing required fields. Continue anyway?`;
-                    if (!confirm(message)) {
-                        return;
-                    }
-                }
-
-                // 添加新文章
-                const updatedArticles = [...articles, ...newArticles];
-                
-                // 使用安全的 UTF-8 编码
-                const jsonString = JSON.stringify(updatedArticles, null, 2);
-                const base64Content = utf8ToBase64(jsonString);
-
-                // 保存到 GitHub
-                await window.saveArticlesToStorage(updatedArticles, base64Content);
-
-                // 更新显示
-                window.renderArticlesList();
-                window.renderExistingCategories();
-
-                // 重上传区域
-                document.getElementById('excel-file').value = '';
-                document.getElementById('preview-area').classList.add('hidden');
-                
-                console.log('Batch upload completed successfully:', newArticles.length, 'articles added');
-                alert('Batch upload completed successfully!');
-            } catch (error) {
-                console.error('Batch upload error:', error);
-                alert('Error during batch upload: ' + error.message);
-            }
-        };
-
-        // 添加分类管理函数
-        window.handleCategoryInput = function(input) {
-            if (event.key === 'Enter' && input.value.trim()) {
-                window.selectedCategories.add(input.value.trim());
-                input.value = '';
-                window.renderSelectedCategories();
-                window.renderExistingCategories();
-            }
-        };
-
-        // 修改渲染已有分类函数
-        window.renderExistingCategories = async function() {
-            const existingCategoriesContainer = document.getElementById('existing-categories');
-            const articles = await window.getArticlesFromStorage();
-            
-            // 获取所有已存在的分类
-            const categories = new Set(articles.flatMap(article => article.categories || []));
-            
-            existingCategoriesContainer.innerHTML = Array.from(categories).map(category => `
-                <button type="button"
-                    class="existing-category px-3 py-1 rounded-full text-sm font-medium
-                    ${window.selectedCategories.has(category) 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
-                    onclick="toggleCategory('${category}')"
-                    data-category="${category}">
-                    ${category}
-                </button>
-            `).join('');
-        };
-
-        // 修改渲染选中分类函数
-        window.renderSelectedCategories = function() {
-            const selectedCategoriesContainer = document.getElementById('selected-categories');
-            selectedCategoriesContainer.innerHTML = Array.from(window.selectedCategories).map(category => `
-                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
-                    ${category}
-                    <button type="button" 
-                        onclick="removeCategory('${category}')"
-                        class="text-blue-600 hover:text-blue-800">
-                        ×
-                    </button>
-                </span>
-            `).join('');
-        };
-
-        // 添加切换分类函数
-        window.toggleCategory = function(category) {
-            if (window.selectedCategories.has(category)) {
-                window.selectedCategories.delete(category);
-            } else {
-                window.selectedCategories.add(category);
-            }
-            window.renderSelectedCategories();
-            window.renderExistingCategories();
-        };
-
-        // 添加移除分类函数
-        window.removeCategory = function(category) {
-            window.selectedCategories.delete(category);
-            window.renderSelectedCategories();
-            window.renderExistingCategories();
-        };
     </script>
 </body>
 </html> 
