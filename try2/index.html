@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dennis P. Culhane - Academic Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <a href="/" class="text-xl font-bold text-gray-800">
+                    Academic Profile
+                </a>
+                <div class="flex gap-4">
+                    <a href="analytics.html" class="text-blue-600 hover:text-blue-800">
+                        Analytics
+                    </a>
+                    <a href="admin.html" class="text-blue-600 hover:text-blue-800">
+                        Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Professor Info Section -->
+        <div class="bg-white rounded-lg shadow-md p-8 mb-8">
+            <div class="flex flex-col md:flex-row items-start gap-8">
+                <div class="w-48 h-48 flex-shrink-0">
+                    <img
+                        src="images/Dennis-Culhane.webp"
+                        alt="Dennis P. Culhane"
+                        class="w-full h-full object-cover rounded-lg"
+                    />
+                </div>
+                
+                <div class="flex-grow">
+                    <h1 class="text-3xl font-bold mb-2">Dennis P. Culhane</h1>
+                    <p class="text-xl text-gray-600 mb-4">Professor<br>
+                        Dana and Andrew Stone Chair in Social Policy<br>
+                        Co-Principal Investigator, Actionable Intelligence for Social Policy</p>
+                    
+                    <div class="mb-4">
+                        <h2 class="text-lg font-semibold mb-2">Research Areas</h2>
+                        <div class="flex flex-wrap gap-2" id="research-areas">
+                            <!-- Research areas will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-gray-700" id="short-bio"></p>
+                        <button id="read-more-btn" class="text-blue-600 hover:text-blue-800 mt-2">
+                            Read More →
+                        </button>
+                    </div>
+                    
+                    <div class="text-gray-600">
+                        <a 
+                            href="mailto:culhane@upenn.edu"
+                            class="hover:text-blue-600"
+                        >
+                            culhane@upenn.edu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Filter -->
+        <div class="mb-8" id="category-filter">
+            <!-- Categories will be inserted here -->
+        </div>
+
+        <!-- Articles List -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="articles-list">
+            <!-- Articles will be inserted here -->
+        </div>
+    </main>
+
+    <!-- Article Modal -->
+    <div id="article-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 id="modal-title" class="text-2xl font-bold text-gray-900"></h2>
+                    <button 
+                        onclick="closeModal()"
+                        class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                    >
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex flex-wrap gap-2">
+                        <div id="modal-categories" class="flex flex-wrap gap-2">
+                            <!-- Multiple tags will be inserted here -->
+                        </div>
+                        <span id="modal-date" class="text-gray-600 text-sm"></span>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-gray-700 font-medium mb-1">Authors</h3>
+                        <p id="modal-authors" class="text-gray-600"></p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-gray-700 font-medium mb-1">Abstract</h3>
+                        <p id="modal-abstract" class="text-gray-600"></p>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <a
+                            id="modal-pdf"
+                            href="#"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                            Download PDF
+                            <svg class="ml-2 -mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bio Modal -->
+    <div id="bio-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-2xl font-bold text-gray-900">About Dennis P. Culhane</h2>
+                    <button 
+                        onclick="closeBioModal()"
+                        class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                    >
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="prose max-w-none" id="bio-content">
+                    <!-- Bio content will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <p class="text-center">
+                © <span id="current-year"></span> Dennis P. Culhane. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html> 

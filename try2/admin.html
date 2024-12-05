@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Academic Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <a href="/" class="text-xl font-bold text-gray-800">Admin Panel</a>
+                <a href="index.html" class="text-blue-600 hover:text-blue-800">Back to Site</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-md p-8">
+            <h1 class="text-2xl font-bold mb-6">Add New Article</h1>
+            
+            <div class="mb-8">
+                <h2 class="text-lg font-medium text-gray-700 mb-3">Existing Categories</h2>
+                <div id="existing-categories" class="flex flex-wrap gap-2">
+                    <!-- 已有的标签将这里动态显示 -->
+                </div>
+            </div>
+            
+            <form id="article-form" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Title</label>
+                    <input type="text" id="title" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Authors</label>
+                    <input type="text" id="authors" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Categories</label>
+                    <div id="selected-categories" class="mt-2 mb-2 flex flex-wrap gap-2">
+                        <!-- 选中的标签将在这里显示 -->
+                    </div>
+                    <div id="categories-container" class="mt-2 space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" 
+                                class="category-input block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                placeholder="Enter a category">
+                            <button type="button" 
+                                class="add-category px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="date" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Abstract</label>
+                    <textarea id="abstract" rows="4" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">PDF File</label>
+                    <div class="mt-1 flex items-center">
+                        <input type="file" 
+                            id="pdf-file" 
+                            accept=".pdf"
+                            required
+                            class="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-blue-50 file:text-blue-700
+                                hover:file:bg-blue-100"
+                        >
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">Only PDF files are accepted</p>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Add Article
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="mt-12 bg-white rounded-lg shadow-md p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Manage Articles</h2>
+                <div class="flex gap-2">
+                    <button 
+                        onclick="toggleSelectMode()"
+                        id="select-mode-btn"
+                        class="px-4 py-2 text-sm font-medium rounded-md text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800"
+                    >
+                        Select Mode
+                    </button>
+                    <button 
+                        onclick="deleteSelected()"
+                        id="delete-selected-btn"
+                        class="hidden px-4 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+                    >
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 文章列表 -->
+            <div id="articles-list" class="space-y-6">
+                <!-- 文章将在这里动态显示 -->
+            </div>
+        </div>
+
+        <div class="mt-12 bg-white rounded-lg shadow-md p-8">
+            <h2 class="text-2xl font-bold mb-6">Batch Upload Articles</h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Excel File</label>
+                    <input type="file" 
+                        id="excel-file" 
+                        accept=".xlsx, .xls"
+                        class="block w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-full file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-50 file:text-blue-700
+                            hover:file:bg-blue-100"
+                    >
+                    <p class="mt-2 text-sm text-gray-500">Excel file should contain columns: Title, Authors, Date, Abstract, PDF URL</p>
+                </div>
+
+                <div>
+                    <button id="batch-upload-btn"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        Upload Batch
+                    </button>
+                </div>
+
+                <!-- 预览区域 -->
+                <div id="preview-area" class="hidden">
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Preview</h3>
+                    <div class="max-h-96 overflow-y-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Authors</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categories</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="preview-table" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // GitHub API 配置
+        const GITHUB_CONFIG = {
+            TOKEN: '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',  // 您的 GitHub token
+            REPO_OWNER: 'Dennis-Culhane',
+            REPO_NAME: 'culhane2.github.io',
+            BRANCH: 'main'
+        };
+
+        const GITHUB_REPO_URL = `https://api.github.com/repos/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}`;
+        const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}/${GITHUB_CONFIG.BRANCH}`;
+
+        // 将 confirmBatchUpload 函数移到全局作用域
+        window.confirmBatchUpload = async function(data) {
+            try {
+                const articles = window.getArticlesFromStorage();
+                
+                // 获取当前最大 ID
+                const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
+                
+                // 转换数据格式，添加数据验证和默认值
+                const newArticles = await Promise.all(data.map(async (row, index) => {
+                    // 如果有 PDF URL，从 URL 获取文件名
+                    const fileName = row['PDF URL'] ? row['PDF URL'].split('/').pop() : null;
+                    
+                    return {
+                        id: maxId + index + 1,
+                        title: row.Title || '',
+                        authors: row.Authors || '',
+                        categories: row.Categories ? row.Categories.split(',').map(c => c.trim()) : [],
+                        date: row.Date || '',
+                        abstract: row.Abstract || '',
+                        pdfUrl: row['PDF URL'] || '',
+                        fileName: fileName
+                    };
+                }));
+
+                // 验证必填字段
+                const invalidArticles = newArticles.filter(article => 
+                    !article.title || !article.authors || !article.date || !article.abstract || !article.pdfUrl
+                );
+
+                if (invalidArticles.length > 0) {
+                    const message = `Warning: ${invalidArticles.length} articles have missing required fields. Continue anyway?`;
+                    if (!confirm(message)) {
+                        return;
+                    }
+                }
+
+                // 添加新文章
+                const updatedArticles = [...articles, ...newArticles];
+                window.saveArticlesToStorage(updatedArticles);
+
+                // 验证保存是否成功
+                const savedArticles = window.getArticlesFromStorage();
+                if (savedArticles.length !== updatedArticles.length) {
+                    throw new Error('Articles were not saved properly');
+                }
+
+                // 更新显示
+                window.renderArticlesList();
+                window.renderExistingCategories();
+
+                // 重置上传区域
+                document.getElementById('excel-file').value = '';
+                document.getElementById('preview-area').classList.add('hidden');
+                
+                console.log('Batch upload completed successfully:', newArticles.length, 'articles added');
+                alert('Batch upload completed successfully!');
+            } catch (error) {
+                console.error('Batch upload error:', error);
+                alert('Error during batch upload: ' + error.message);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化选中的分类集合
+            window.selectedCategories = new Set();
+            window.isSelectMode = false;
+            
+            // 表单提交事件监听
+            const form = document.getElementById('article-form');
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    const formData = new FormData(this);
+                    await window.handleArticleSubmit(formData);
+                } catch (error) {
+                    console.error('Form submission error:', error);
+                }
+            });
+
+            // 处理已有分类的点击
+            document.getElementById('existing-categories').addEventListener('click', function(e) {
+                const button = e.target.closest('.existing-category');
+                if (button) {
+                    const category = button.dataset.category;
+                    if (window.selectedCategories.has(category)) {
+                        window.selectedCategories.delete(category);
+                    } else {
+                        window.selectedCategories.add(category);
+                    }
+                    window.renderExistingCategories();
+                    window.renderSelectedCategories();
+                }
+            });
+
+            // 处理移除选中分类
+            document.getElementById('selected-categories').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-selected-category')) {
+                    const category = e.target.dataset.category;
+                    window.selectedCategories.delete(category);
+                    window.renderExistingCategories();
+                    window.renderSelectedCategories();
+                }
+            });
+
+            // 初始化渲染
+            window.renderExistingCategories();
+            window.renderArticlesList();
+            
+            // 添加批量上传相关的事件监听器
+            window.handleBatchUpload = async function() {
+                const excelFile = document.getElementById('excel-file').files[0];
+                if (!excelFile) {
+                    alert('Please select an Excel file');
+                    return;
+                }
+
+                try {
+                    console.log('Reading Excel file...');
+                    const data = await readExcelFile(excelFile);
+                    console.log('Excel data:', data);
+                    if (validateData(data)) {
+                        showPreview(data);
+                    }
+                } catch (error) {
+                    console.error('Error reading Excel file:', error);
+                    alert('Error reading Excel file: ' + error.message);
+                }
+            };
+
+            // 添加批量上传按钮的事件监听器
+            document.getElementById('batch-upload-btn').addEventListener('click', window.handleBatchUpload);
+
+            // 添加这些辅助函数
+            async function readExcelFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+                            const data = XLSX.utils.sheet_to_json(worksheet);
+                            resolve(data);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsBinaryString(file);
+                });
+            }
+
+            function validateData(data) {
+                const requiredFields = ['Title', 'Authors', 'Date', 'Abstract', 'PDF URL'];
+                const missingFields = [];
+
+                if (data.length === 0) {
+                    alert('Excel file is empty');
+                    return false;
+                }
+
+                const firstRow = data[0];
+                requiredFields.forEach(field => {
+                    if (!(field in firstRow)) {
+                        missingFields.push(field);
+                    }
+                });
+
+                if (missingFields.length > 0) {
+                    alert(`Missing required columns: ${missingFields.join(', ')}`);
+                    return false;
+                }
+
+                return true;
+            }
+
+            function showPreview(data) {
+                const previewArea = document.getElementById('preview-area');
+                const previewTable = document.getElementById('preview-table');
+                previewArea.classList.remove('hidden');
+
+                previewTable.innerHTML = data.map((row, index) => {
+                    const categories = row.Categories ? row.Categories.split(',').map(c => c.trim()) : [];
+                    const categoriesHtml = categories.map(category => 
+                        `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1">
+                            ${category}
+                        </span>`
+                    ).join('');
+
+                    return `
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900">${row.Title}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">${row.Authors}</td>
+                            <td class="px-6 py-4 text-sm">
+                                <div class="flex flex-wrap gap-1">
+                                    ${categoriesHtml || '<span class="text-gray-500">No categories</span>'}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">${row.Date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Ready
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // 添加确认按钮
+                if (!document.getElementById('confirm-batch-upload')) {
+                    const confirmButton = document.createElement('button');
+                    confirmButton.id = 'confirm-batch-upload';
+                    confirmButton.className = 'mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
+                    confirmButton.textContent = 'Confirm Upload';
+                    confirmButton.onclick = () => confirmBatchUpload(data);
+                    previewArea.appendChild(confirmButton);
+                }
+            }
+
+            console.log('DOMContentLoaded: Event listeners initialized');
+        });
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html> 
