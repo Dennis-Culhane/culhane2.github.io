@@ -151,7 +151,7 @@
     <script src="js/admin.js"></script>
     <script>
         // 添加文件读取函数
-        async function readExcelFile(file) {
+        window.readExcelFile = async function(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -168,10 +168,10 @@
                 reader.onerror = reject;
                 reader.readAsBinaryString(file);
             });
-        }
+        };
 
         // 添加数据验证函数
-        function validateData(data) {
+        window.validateData = function(data) {
             const requiredFields = ['Title', 'Authors', 'Date', 'Abstract'];
             const missingFields = [];
 
@@ -193,10 +193,10 @@
             }
 
             return true;
-        }
+        };
 
         // 添加预览显示函数
-        function showPreview(data) {
+        window.showPreview = function(data) {
             const previewArea = document.getElementById('preview-area');
             const previewTable = document.getElementById('preview-table');
             previewArea.classList.remove('hidden');
@@ -234,10 +234,10 @@
                 confirmButton.id = 'confirm-batch-upload';
                 confirmButton.className = 'mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
                 confirmButton.textContent = 'Confirm Upload';
-                confirmButton.onclick = () => confirmBatchUpload(data);
+                confirmButton.onclick = () => window.confirmBatchUpload(data);
                 previewArea.appendChild(confirmButton);
             }
-        }
+        };
 
         document.addEventListener('DOMContentLoaded', async function() {
             // 初始化
@@ -277,9 +277,9 @@
                 }
 
                 try {
-                    const data = await readExcelFile(excelFile);
-                    if (validateData(data)) {
-                        showPreview(data);
+                    const data = await window.readExcelFile(excelFile);
+                    if (window.validateData(data)) {
+                        window.showPreview(data);
                     }
                 } catch (error) {
                     console.error('Error reading Excel file:', error);
