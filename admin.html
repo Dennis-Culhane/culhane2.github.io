@@ -97,7 +97,7 @@
                 </div>
 
                 <div>
-                    <button id="batch-upload-btn"
+                    <button type="button" id="batch-upload-btn"
                         class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         Upload Batch
                     </button>
@@ -193,14 +193,14 @@
                 newArticle.id = maxId + 1;
                 console.log('Generated new article ID:', newArticle.id);
 
-                // 添加新文章并保存
+                // 添加新文章��保存
                 articles.push(newArticle);
                 console.log('Saving updated articles array...');
                 await window.saveArticlesToStorage(articles);
                 
                 console.log('Article saved successfully:', newArticle);
 
-                // 重新渲染文章列表
+                // 重新渲染章列表
                 await window.renderArticlesList();
                 await window.renderExistingCategories();
                 
@@ -232,12 +232,65 @@
                 await window.renderExistingCategories();
                 window.renderSelectedCategories();
 
-                // 表单提交事件
+                // 表单提交���件
                 const form = document.getElementById('article-form');
                 form.addEventListener('submit', async function(e) {
-                    e.preventDefault();
+                    e.preventDefault(); // 阻止表单默认提交行为
                     console.log('Form submitted');
                     try {
+                        const formData = new FormData(this);
+                        await window.handleArticleSubmit(formData);
+                        
+                        // 重置表单和更新界面
+                        this.reset();
+                        window.selectedCategories.clear();
+                        await window.renderArticlesList();
+                        await window.renderExistingCategories();
+                        window.renderSelectedCategories();
+                    } catch (error) {
+                        console.error('Form submission error:', error);
+                    }
+                });
+
+                // 添加批量上传相关函数
+                async function handleBatchUpload() {
+                    console.log('Handling batch upload...');
+                    const excelFile = document.getElementById('excel-file').files[0];
+                    if (!excelFile) {
+                        alert('Please select an Excel file');
+                        return;
+                    }
+
+                    try {
+                        console.log('Reading Excel file...');
+                        const data = await window.readExcelFile(excelFile);
+                        console.log('Excel data:', data);
+                        
+                        if (validateData(data)) {
+                            showPreview(data);
+                        }
+                    } catch (error) {
+                        console.error('Error reading Excel file:', error);
+                        alert('Error reading Excel file: ' + error.message);
+                    }
+                }
+
+                // 添加批量上传按钮事件监听
+                const batchUploadBtn = document.getElementById('batch-upload-btn');
+                if (batchUploadBtn) {
+                    console.log('Adding batch upload button listener');
+                    batchUploadBtn.addEventListener('click', handleBatchUpload);
+                } else {
+                    console.error('Batch upload button not found');
+                }
+
+                console.log('Admin page initialized successfully');
+            } catch (error) {
+                console.error('Error initializing admin page:', error);
+                alert('Error initializing page: ' + error.message);
+            }
+        });
+
         // 添加文件读取函数
         window.readExcelFile = async function(file) {
             return new Promise((resolve, reject) => {
@@ -386,7 +439,7 @@
                 window.renderArticlesList();
                 window.renderExistingCategories();
 
-                // 重���上传区域
+                // 重上传区域
                 document.getElementById('excel-file').value = '';
                 document.getElementById('preview-area').classList.add('hidden');
                 
@@ -395,62 +448,6 @@
             } catch (error) {
                 console.error('Batch upload error:', error);
                 alert('Error during batch upload: ' + error.message);
-            }
-        };
-
-        // 添加文章提交处理函数
-        window.handleArticleSubmit = async function(formData) {
-            try {
-                // 验证表单数据
-                const title = document.getElementById('title').value;
-                const authors = document.getElementById('authors').value;
-                const date = document.getElementById('date').value;
-                const abstract = document.getElementById('abstract').value;
-                const pdfFile = document.getElementById('pdf-file').files[0];
-
-                if (!title || !authors || !date || !abstract || !pdfFile) {
-                    throw new Error('Please fill in all required fields');
-                }
-
-                console.log('Starting article save...');
-
-                // 创建文章对象
-                const newArticle = {
-                    title: title,
-                    authors: authors,
-                    date: date,
-                    categories: Array.from(window.selectedCategories || []),
-                    abstract: abstract,
-                    fileName: pdfFile.name,
-                    pdfUrl: `${GITHUB_RAW_URL}/papers/${pdfFile.name}`
-                };
-
-                // 获取现有文章
-                const articles = await window.getArticlesFromStorage();
-                const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
-                newArticle.id = maxId + 1;
-
-                // 添加新文章并保存
-                articles.push(newArticle);
-                await window.saveArticlesToStorage(articles);
-                
-                console.log('Article saved successfully:', newArticle);
-
-                // 重新渲染文章列表
-                window.renderArticlesList();
-                window.renderExistingCategories();
-                
-                // 重置表单
-                document.getElementById('article-form').reset();
-                window.selectedCategories = new Set();
-                window.renderSelectedCategories();
-                
-                alert('Article added successfully!');
-                return newArticle;
-            } catch (error) {
-                console.error('Error saving article:', error);
-                alert('Error saving article: ' + error.message);
-                throw error;
             }
         };
 
@@ -517,70 +514,6 @@
             window.renderSelectedCategories();
             window.renderExistingCategories();
         };
-
-        // 修改 DOMContentLoaded 事件监听器
-        document.addEventListener('DOMContentLoaded', async function() {
-            // 初始化
-            window.selectedCategories = new Set();
-            window.isSelectMode = false;
-
-            try {
-                // 获取初始数据并渲染
-                const articles = await window.getArticlesFromStorage();
-                console.log('Initial articles loaded:', articles);
-                
-                // 渲染界面
-                window.renderArticlesList();
-                window.renderExistingCategories();
-                window.renderSelectedCategories();
-
-                // 添加分类输入框事件监听
-                const categoryInputs = document.querySelectorAll('.category-input');
-                categoryInputs.forEach(input => {
-                    input.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            window.handleCategoryInput(input);
-                        }
-                    });
-                });
-            } catch (error) {
-                console.error('Error initializing admin page:', error);
-            }
-
-            // 表单提交事件
-            const form = document.getElementById('article-form');
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                console.log('Form submitted');
-                try {
-                    const formData = new FormData(this);
-                    await window.handleArticleSubmit(formData);
-                } catch (error) {
-                    console.error('Form submission error:', error);
-                }
-            });
-
-            // 批量上传事件
-            document.getElementById('batch-upload-btn').addEventListener('click', async function() {
-                console.log('Batch upload button clicked');
-                const excelFile = document.getElementById('excel-file').files[0];
-                if (!excelFile) {
-                    alert('Please select an Excel file');
-                    return;
-                }
-
-                try {
-                    const data = await window.readExcelFile(excelFile);
-                    if (window.validateData(data)) {
-                        window.showPreview(data);
-                    }
-                } catch (error) {
-                    console.error('Error reading Excel file:', error);
-                    alert('Error reading Excel file: ' + error.message);
-                }
-            });
-        });
     </script>
 </body>
 </html> 
