@@ -151,6 +151,93 @@
     <script src="js/data.js"></script>
     <script src="js/admin.js"></script>
     <script>
+        // 添加全局变量
+        window.selectedCategories = new Set();
+        window.isSelectMode = false;
+
+        // 修改 handleArticleSubmit 函数
+        window.handleArticleSubmit = async function(formData) {
+            try {
+                // 验证表单数据
+                const title = document.getElementById('title').value;
+                const authors = document.getElementById('authors').value;
+                const date = document.getElementById('date').value;
+                const abstract = document.getElementById('abstract').value;
+                const pdfFile = document.getElementById('pdf-file').files[0];
+
+                if (!title || !authors || !date || !abstract || !pdfFile) {
+                    throw new Error('Please fill in all required fields');
+                }
+
+                console.log('Starting article save process...');
+                console.log('Form data:', { title, authors, date, abstract, fileName: pdfFile.name });
+                console.log('Selected categories:', Array.from(window.selectedCategories));
+
+                // 创建文章对象
+                const newArticle = {
+                    title: title,
+                    authors: authors,
+                    date: date,
+                    categories: Array.from(window.selectedCategories || []),
+                    abstract: abstract,
+                    fileName: pdfFile.name,
+                    pdfUrl: `${GITHUB_RAW_URL}/papers/${pdfFile.name}`
+                };
+
+                // 获取现有文章
+                console.log('Fetching existing articles...');
+                const articles = await window.getArticlesFromStorage();
+                console.log('Current articles count:', articles.length);
+
+                const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
+                newArticle.id = maxId + 1;
+                console.log('Generated new article ID:', newArticle.id);
+
+                // 添加新文章并保存
+                articles.push(newArticle);
+                console.log('Saving updated articles array...');
+                await window.saveArticlesToStorage(articles);
+                
+                console.log('Article saved successfully:', newArticle);
+
+                // 重新渲染文章列表
+                await window.renderArticlesList();
+                await window.renderExistingCategories();
+                
+                // 重置表单
+                document.getElementById('article-form').reset();
+                window.selectedCategories.clear();
+                window.renderSelectedCategories();
+                
+                alert('Article added successfully!');
+                return newArticle;
+            } catch (error) {
+                console.error('Error in handleArticleSubmit:', error);
+                alert('Error saving article: ' + error.message);
+                throw error;
+            }
+        };
+
+        // 确保在 DOMContentLoaded 时初始化所有功能
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                console.log('Initializing admin page...');
+                
+                // 获取初始数据
+                const articles = await window.getArticlesFromStorage();
+                console.log('Initial articles loaded:', articles.length);
+                
+                // 渲染界面
+                await window.renderArticlesList();
+                await window.renderExistingCategories();
+                window.renderSelectedCategories();
+
+                // 表单提交事件
+                const form = document.getElementById('article-form');
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    console.log('Form submitted');
+                    try {
         // 添加文件读取函数
         window.readExcelFile = async function(file) {
             return new Promise((resolve, reject) => {

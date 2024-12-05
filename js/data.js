@@ -79,42 +79,28 @@ async function getArticlesFromGitHub() {
     }
 }
 
+// 修改 GitHub API URL
+const GITHUB_API_URL = 'https://api.github.com/repos/Dennis-Culhane/culhane2.github.io';
+
 // 修改保存函数
 async function saveArticlesToGitHub(articles) {
     try {
+        console.log('Starting save to GitHub...');
+        
         // 将数据转换为 Base64
         const content = utf8ToBase64(JSON.stringify(articles, null, 2));
-
-        // 获取现有文件的 SHA（如果存在）
-        let sha = '';
-        try {
-            const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
-                headers: {
-                    'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                sha = data.sha;
-            }
-        } catch (error) {
-            console.log('File does not exist yet, creating new file');
-        }
+        console.log('Data encoded successfully');
 
         // 准备请求体
         const body = {
             message: 'Update articles data',
             content: content,
-            branch: GITHUB_CONFIG.BRANCH
+            branch: 'main'  // 确保使用正确的分支名
         };
 
-        if (sha) {
-            body.sha = sha;
-        }
-
         // 发送请求
-        const saveResponse = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
+        console.log('Sending request to GitHub API...');
+        const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
@@ -124,16 +110,18 @@ async function saveArticlesToGitHub(articles) {
             body: JSON.stringify(body)
         });
 
-        if (!saveResponse.ok) {
-            const errorData = await saveResponse.json();
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('GitHub API Error:', errorData);
             throw new Error(`GitHub API Error: ${errorData.message}`);
         }
 
-        console.log('Articles saved successfully');
+        const responseData = await response.json();
+        console.log('Save successful:', responseData);
         return true;
     } catch (error) {
-        console.error('Error saving articles:', error);
-        throw error;
+        console.error('Error in saveArticlesToGitHub:', error);
+        throw new Error('Failed to save articles: ' + error.message);
     }
 }
 
