@@ -240,7 +240,20 @@
             }
         };
 
-        // 添加确认上传函数
+        // 添加 UTF-8 编码辅助函数
+        function utf8ToBase64(str) {
+            try {
+                return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+                    function toSolidBytes(match, p1) {
+                        return String.fromCharCode('0x' + p1);
+                    }));
+            } catch (error) {
+                console.error('Error in utf8ToBase64:', error);
+                throw new Error('Failed to encode data');
+            }
+        }
+
+        // 修改 confirmBatchUpload 函数
         window.confirmBatchUpload = async function(data) {
             try {
                 const articles = await window.getArticlesFromStorage();
@@ -275,13 +288,9 @@
                 // 添加新文章
                 const updatedArticles = [...articles, ...newArticles];
                 
-                // 使用 UTF-8 编码处理数据
-                const content = new TextEncoder().encode(
-                    JSON.stringify(updatedArticles, null, 2)
-                );
-                const base64Content = btoa(
-                    String.fromCharCode.apply(null, new Uint8Array(content))
-                );
+                // 使用安全的 UTF-8 编码
+                const jsonString = JSON.stringify(updatedArticles, null, 2);
+                const base64Content = utf8ToBase64(jsonString);
 
                 // 保存到 GitHub
                 await window.saveArticlesToStorage(updatedArticles, base64Content);
@@ -440,7 +449,7 @@
                 window.renderExistingCategories();
                 window.renderSelectedCategories();
 
-                // 添加分类输入框事件监听
+                // 添��分类输入框事件监听
                 const categoryInputs = document.querySelectorAll('.category-input');
                 categoryInputs.forEach(input => {
                     input.addEventListener('keypress', (e) => {
