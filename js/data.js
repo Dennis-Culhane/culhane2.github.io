@@ -55,82 +55,84 @@ const defaultArticles = [
     }
 ];
 
-// 本地存储功能
-function saveArticlesToStorage(articles) {
+// 从 GitHub 获取文章数据
+async function getArticlesFromGitHub() {
     try {
-        if (!Array.isArray(articles)) {
-            throw new Error('Invalid articles data type');
-        }
-        localStorage.setItem('articles', JSON.stringify(articles));
-        console.log('Saved articles count:', articles.length);
-    } catch (error) {
-        console.error('Error saving articles:', error);
-        throw error;
-    }
-}
+        const response = await fetch(`${GITHUB_REPO_URL}/contents/data/articles.json`, {
+            headers: {
+                'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
 
-function getArticlesFromStorage() {
-    try {
-        const storedArticles = localStorage.getItem('articles');
-        if (!storedArticles) {
+        if (response.status === 404) {
+            // 如果文件不存在，返回默认数据
             return defaultArticles;
         }
-        const articles = JSON.parse(storedArticles);
-        if (!Array.isArray(articles)) {
-            console.error('Invalid stored data format');
-            return defaultArticles;
-        }
-        return articles;
+
+        const data = await response.json();
+        const content = atob(data.content);
+        return JSON.parse(content);
     } catch (error) {
-        console.error('Error getting articles:', error);
+        console.error('Error fetching articles from GitHub:', error);
         return defaultArticles;
     }
 }
 
-// 添加初始化标志
-let isInitialized = false;
-
-function initializeStorage() {
-    if (isInitialized) {
-        return;
-    }
-
+// 保存文章数据到 GitHub
+async function saveArticlesToGitHub(articles) {
     try {
-        const existingArticles = localStorage.getItem('articles');
-        if (!existingArticles || existingArticles === '[]' || existingArticles === 'null') {
-            console.log('Initializing storage with default articles');
-            saveArticlesToStorage(defaultArticles);
-        } else {
-            try {
-                const articles = JSON.parse(existingArticles);
-                if (!Array.isArray(articles) || articles.length === 0) {
-                    console.log('Invalid or empty articles array, reinitializing');
-                    saveArticlesToStorage(defaultArticles);
-                } else {
-                    console.log('Storage initialized with', articles.length, 'articles');
+        // 首先获取现有文件的 SHA（如果存在）
+        let sha = '';
+        try {
+            const response = await fetch(`${GITHUB_REPO_URL}/contents/data/articles.json`, {
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
                 }
-            } catch (error) {
-                console.error('Error parsing stored articles, reinitializing:', error);
-                saveArticlesToStorage(defaultArticles);
+            });
+            if (response.ok) {
+                const data = await response.json();
+                sha = data.sha;
             }
+        } catch (error) {
+            console.log('File does not exist yet');
         }
-        isInitialized = true;
+
+        // 准备更新或创建文件
+        const content = btoa(JSON.stringify(articles, null, 2));
+        const body = {
+            message: 'Update articles data',
+            content,
+            branch: GITHUB_CONFIG.BRANCH
+        };
+
+        if (sha) {
+            body.sha = sha;
+        }
+
+        // 发送请求
+        const response = await fetch(`${GITHUB_REPO_URL}/contents/data/articles.json`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to save articles to GitHub');
+        }
+
+        console.log('Articles saved to GitHub successfully');
     } catch (error) {
-        console.error('Error during initialization:', error);
-        saveArticlesToStorage(defaultArticles);
-        isInitialized = true;
+        console.error('Error saving articles to GitHub:', error);
+        throw error;
     }
 }
 
-// 修改初始化调用
-document.addEventListener('DOMContentLoaded', () => {
-    if (!isInitialized) {
-        console.log('Starting storage initialization');
-        initializeStorage();
-        console.log('Storage initialization complete');
-    }
-});
-
-// 导出函数要放在最后
-window.saveArticlesToStorage = saveArticlesToStorage;
-window.getArticlesFromStorage = getArticlesFromStorage;
+// 导出函数供其他文件使用
+window.getArticlesFromStorage = getArticlesFromGitHub;
+window.saveArticlesToStorage = saveArticlesToGitHub;

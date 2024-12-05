@@ -200,9 +200,9 @@ window.handleArticleSubmit = async function(formData) {
 };
 
 // 修改 saveArticle 函数
-function saveArticle(article) {
+async function saveArticle(article) {
     try {
-        const articles = window.getArticlesFromStorage() || [];
+        const articles = await window.getArticlesFromStorage();
         const newId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) + 1 : 1;
         
         const newArticle = {
@@ -211,10 +211,10 @@ function saveArticle(article) {
         };
         
         articles.push(newArticle);
-        window.saveArticlesToStorage(articles);
+        await window.saveArticlesToStorage(articles);
         
         // 立即重新渲染
-        renderArticlesList();
+        await renderArticlesList();
         renderExistingCategories();
         
         return newArticle;
