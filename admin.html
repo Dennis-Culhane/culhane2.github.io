@@ -150,10 +150,13 @@
     <!-- 1. 加载外部依赖 -->
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
 
+    <!-- 在其他脚本之前加载配置 -->
+    <script src="js/config.js"></script>
+
     <script>
         // 1. 定义全局变量和配置
         const GITHUB_CONFIG = {
-            TOKEN: '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',
+            TOKEN: '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',
             REPO_OWNER: 'Dennis-Culhane',
             REPO_NAME: 'culhane2.github.io',
             BRANCH: 'main'
@@ -369,7 +372,7 @@
         window.showPreview = showPreview;
         window.confirmBatchUpload = confirmBatchUpload;
 
-        // 3. 页面加载完成后初始化
+        // 3. 页面加载完成后初始��
         window.addEventListener('load', async function() {
             try {
                 console.log('Checking if required functions are loaded...');
