@@ -193,11 +193,49 @@
             }
         }
 
+        // 添加 UTF-8 编码辅助函数
+        function utf8ToBase64(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+        }
+
+        // 修改保存函数
         async function saveArticlesToStorage(articles) {
             try {
                 console.log('Saving articles to GitHub...');
-                const content = btoa(JSON.stringify(articles, null, 2));
                 
+                // 使用 UTF-8 编码
+                const content = utf8ToBase64(JSON.stringify(articles, null, 2));
+                
+                // 获取现有文件的 SHA
+                let sha = '';
+                try {
+                    const getResponse = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
+                        headers: {
+                            'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    
+                    if (getResponse.ok) {
+                        const data = await getResponse.json();
+                        sha = data.sha;
+                    }
+                } catch (error) {
+                    console.log('No existing file found');
+                }
+
+                // 准备请求体
+                const body = {
+                    message: 'Update articles data',
+                    content: content,
+                    branch: GITHUB_CONFIG.BRANCH
+                };
+
+                if (sha) {
+                    body.sha = sha;
+                }
+
+                // 发送保存请求
                 const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
                     method: 'PUT',
                     headers: {
@@ -205,15 +243,13 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/vnd.github.v3+json'
                     },
-                    body: JSON.stringify({
-                        message: 'Update articles data',
-                        content: content,
-                        branch: GITHUB_CONFIG.BRANCH
-                    })
+                    body: JSON.stringify(body)
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to save articles');
+                    const errorData = await response.json();
+                    console.error('GitHub API Error:', errorData);
+                    throw new Error(`GitHub API Error: ${errorData.message}`);
                 }
 
                 console.log('Articles saved successfully');
@@ -283,6 +319,7 @@
             }
         }
 
+        // 修改批量上传确认函数
         async function confirmBatchUpload(data) {
             try {
                 const articles = await window.getArticlesFromStorage();
@@ -304,7 +341,9 @@
 
                 // 添加新文章
                 const updatedArticles = [...articles, ...newArticles];
-                await window.saveArticlesToStorage(updatedArticles);
+                
+                // 使用修改后的保存函数
+                await saveArticlesToStorage(updatedArticles);
 
                 // 更新显示
                 await window.renderArticlesList();
@@ -314,6 +353,7 @@
                 document.getElementById('excel-file').value = '';
                 document.getElementById('preview-area').classList.add('hidden');
                 
+                console.log('Batch upload completed successfully');
                 alert('Batch upload completed successfully!');
             } catch (error) {
                 console.error('Batch upload error:', error);
@@ -376,6 +416,54 @@
                         }
                     });
                 }
+
+                // 表单提交事件
+                const form = document.getElementById('article-form');
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    console.log('Form submitted');
+                    
+                    try {
+                        const title = document.getElementById('title').value;
+                        const authors = document.getElementById('authors').value;
+                        const date = document.getElementById('date').value;
+                        const abstract = document.getElementById('abstract').value;
+                        const pdfFile = document.getElementById('pdf-file').files[0];
+
+                        if (!title || !authors || !date || !abstract || !pdfFile) {
+                            throw new Error('Please fill in all required fields');
+                        }
+
+                        const articles = await window.getArticlesFromStorage();
+                        const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
+
+                        const newArticle = {
+                            id: maxId + 1,
+                            title: title,
+                            authors: authors,
+                            date: date,
+                            categories: Array.from(window.selectedCategories || []),
+                            abstract: abstract,
+                            fileName: pdfFile.name,
+                            pdfUrl: `${GITHUB_RAW_URL}/papers/${pdfFile.name}`
+                        };
+
+                        articles.push(newArticle);
+                        await saveArticlesToStorage(articles);
+
+                        // 重置表单和更新界面
+                        this.reset();
+                        window.selectedCategories.clear();
+                        await window.renderArticlesList();
+                        await window.renderExistingCategories();
+                        window.renderSelectedCategories();
+
+                        alert('Article added successfully!');
+                    } catch (error) {
+                        console.error('Error saving article:', error);
+                        alert('Error saving article: ' + error.message);
+                    }
+                });
             } catch (error) {
                 console.error('Error initializing admin page:', error);
                 alert('Error initializing page: ' + error.message);
