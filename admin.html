@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Academic Profile</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-50">
     <nav class="bg-white shadow-sm">
@@ -146,84 +145,64 @@
         </div>
     </main>
 
-    <!-- Scripts -->
-    <script src="js/config.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/admin.js"></script>
+    <!-- 在 body 结束标签前按顺序加载所有脚本 -->
+    
+    <!-- 1. 首先加载 GitHub 配置 -->
     <script>
-        // 初始化全局变量
-        window.selectedCategories = new Set();
-        window.isSelectMode = false;
-
-        // 文件读取函数
-        window.readExcelFile = function(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const data = e.target.result;
-                        const workbook = XLSX.read(data, { type: 'binary' });
-                        const firstSheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[firstSheetName];
-                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                        resolve(jsonData);
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                reader.onerror = reject;
-                reader.readAsBinaryString(file);
-            });
+        // GitHub 配置
+        const GITHUB_CONFIG = {
+            TOKEN: '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',
+            REPO_OWNER: 'Dennis-Culhane',
+            REPO_NAME: 'culhane2.github.io',
+            BRANCH: 'main'
         };
 
-        // 数据验证函数
-        window.validateData = function(data) {
-            if (!Array.isArray(data) || data.length === 0) {
-                alert('No valid data found in Excel file');
-                return false;
+        const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}`;
+        const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}/${GITHUB_CONFIG.BRANCH}`;
+    </script>
+
+    <!-- 2. 加载外部依赖 -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <!-- 3. 加载数据处理脚本 -->
+    <script src="js/data.js"></script>
+
+    <!-- 4. 加载管理界面脚本 -->
+    <script src="js/admin.js"></script>
+
+    <!-- 5. 页面初始化脚本 -->
+    <script>
+        // 确保所有必要的函数都已加载
+        function checkRequiredFunctions() {
+            const required = [
+                'getArticlesFromStorage',
+                'saveArticlesToStorage',
+                'renderArticlesList',
+                'renderExistingCategories',
+                'renderSelectedCategories'
+            ];
+
+            const missing = required.filter(func => !window[func]);
+            if (missing.length > 0) {
+                throw new Error(`Missing required functions: ${missing.join(', ')}`);
             }
-            return true;
-        };
+        }
 
-        // 显示预览函数
-        window.showPreview = function(data) {
-            const previewArea = document.getElementById('preview-area');
-            const previewTable = document.getElementById('preview-table');
-            previewArea.classList.remove('hidden');
-
-            previewTable.innerHTML = data.map(row => `
-                <tr>
-                    <td class="px-6 py-4 text-sm text-gray-900">${row.Title || ''}</td>
-                    <td class="px-6 py-4 text-sm text-gray-500">${row.Authors || ''}</td>
-                    <td class="px-6 py-4 text-sm text-gray-500">${row.Categories || ''}</td>
-                    <td class="px-6 py-4 text-sm text-gray-500">${row.Date || ''}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Ready
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
-
-            // 添加确认按钮
-            if (!document.getElementById('confirm-batch-upload')) {
-                const confirmButton = document.createElement('button');
-                confirmButton.id = 'confirm-batch-upload';
-                confirmButton.className = 'mt-4 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
-                confirmButton.textContent = 'Confirm Upload';
-                confirmButton.onclick = () => window.confirmBatchUpload(data);
-                previewArea.appendChild(confirmButton);
-            }
-        };
-
-        // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', async function() {
+        // 等待所有脚本加载完成
+        window.addEventListener('load', async function() {
             try {
+                console.log('Checking required functions...');
+                checkRequiredFunctions();
+                
                 console.log('Initializing admin page...');
+                
+                // 初始化全局变量
+                window.selectedCategories = new Set();
+                window.isSelectMode = false;
                 
                 // 获取初始数据
                 const articles = await window.getArticlesFromStorage();
-                console.log('Initial articles loaded:', articles.length);
+                console.log('Initial articles loaded:', articles);
                 
                 // 渲染界面
                 await window.renderArticlesList();
