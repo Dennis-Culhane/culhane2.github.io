@@ -55,10 +55,15 @@ const defaultArticles = [
     }
 ];
 
+// 修改 GitHub API URL 和数据存储路径
+const GITHUB_API_URL = 'https://api.github.com/repos/Dennis-Culhane/culhane2.github.io';
+const DATA_PATH = 'data/articles.json';
+
 // 从 GitHub 获取文章数据
 async function getArticlesFromGitHub() {
     try {
-        const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
+        console.log('Fetching articles from GitHub...');
+        const response = await fetch(`${GITHUB_API_URL}/contents/${DATA_PATH}`, {
             headers: {
                 'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
                 'Accept': 'application/vnd.github.v3+json'
@@ -66,41 +71,66 @@ async function getArticlesFromGitHub() {
         });
 
         if (response.status === 404) {
-            console.log('Articles file not found, using default data');
-            return defaultArticles;
+            console.log('No articles file found, returning empty array');
+            return [];
+        }
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch articles');
         }
 
         const data = await response.json();
         const content = atob(data.content);
-        return JSON.parse(content);
+        const articles = JSON.parse(content);
+        console.log('Articles fetched successfully:', articles.length);
+        return articles;
     } catch (error) {
         console.error('Error fetching articles:', error);
-        return defaultArticles;
+        return [];
     }
 }
 
-// 修改 GitHub API URL
-const GITHUB_API_URL = 'https://api.github.com/repos/Dennis-Culhane/culhane2.github.io';
-
-// 修改保存函数
+// 保存文章数据到 GitHub
 async function saveArticlesToGitHub(articles) {
     try {
         console.log('Starting save to GitHub...');
         
-        // 将数据转换为 Base64
-        const content = utf8ToBase64(JSON.stringify(articles, null, 2));
-        console.log('Data encoded successfully');
+        // 获取现有文件的 SHA
+        let sha = '';
+        try {
+            const response = await fetch(`${GITHUB_API_URL}/contents/${DATA_PATH}`, {
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                sha = data.sha;
+                console.log('Existing file SHA:', sha);
+            }
+        } catch (error) {
+            console.log('No existing file found');
+        }
 
+        // 准备文件内容
+        const content = utf8ToBase64(JSON.stringify(articles, null, 2));
+        
         // 准备请求体
         const body = {
             message: 'Update articles data',
             content: content,
-            branch: 'main'  // 确保使用正确的分支名
+            branch: 'main'
         };
 
-        // 发送请求
-        console.log('Sending request to GitHub API...');
-        const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
+        if (sha) {
+            body.sha = sha;
+        }
+
+        // 发送保存请求
+        console.log('Sending save request...');
+        const saveResponse = await fetch(`${GITHUB_API_URL}/contents/${DATA_PATH}`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
@@ -110,22 +140,22 @@ async function saveArticlesToGitHub(articles) {
             body: JSON.stringify(body)
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
+        if (!saveResponse.ok) {
+            const errorData = await saveResponse.json();
             console.error('GitHub API Error:', errorData);
             throw new Error(`GitHub API Error: ${errorData.message}`);
         }
 
-        const responseData = await response.json();
+        const responseData = await saveResponse.json();
         console.log('Save successful:', responseData);
         return true;
     } catch (error) {
-        console.error('Error in saveArticlesToGitHub:', error);
+        console.error('Error saving articles:', error);
         throw new Error('Failed to save articles: ' + error.message);
     }
 }
 
-// 添加 UTF-8 编码辅助函数
+// UTF-8 编码辅助函数
 function utf8ToBase64(str) {
     return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
         function toSolidBytes(match, p1) {
