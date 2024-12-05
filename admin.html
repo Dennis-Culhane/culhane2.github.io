@@ -145,9 +145,12 @@
         </div>
     </main>
 
-    <!-- 在 body 结束标签前按顺序加载所有脚本 -->
+    <!-- 在 body 结束标签前添加所有脚本 -->
     
-    <!-- 1. 首先加载 GitHub 配置 -->
+    <!-- 1. 加载外部依赖 -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <!-- 2. 定义所有必需的函数和配置 -->
     <script>
         // GitHub 配置
         const GITHUB_CONFIG = {
@@ -159,14 +162,8 @@
 
         const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}`;
         const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}/${GITHUB_CONFIG.BRANCH}`;
-    </script>
 
-    <!-- 2. 加载外部依赖 -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-
-    <!-- 3. 添加基本的存储函数，以防 data.js 未正确加载 -->
-    <script>
-        // 基本的存储函数
+        // 存储函数
         window.getArticlesFromStorage = async function() {
             try {
                 console.log('Fetching articles from GitHub...');
@@ -227,13 +224,70 @@
                 throw error;
             }
         };
+
+        // 渲染函数
+        window.renderArticlesList = async function() {
+            const articlesList = document.getElementById('articles-list');
+            const articles = await window.getArticlesFromStorage();
+            
+            if (!articles || articles.length === 0) {
+                articlesList.innerHTML = `
+                    <p class="text-gray-500 text-center py-8">No articles yet</p>
+                `;
+                return;
+            }
+
+            articlesList.innerHTML = articles.map(article => `
+                <div class="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <h3 class="text-xl font-semibold mb-2">${article.title}</h3>
+                    <p class="text-gray-600 mb-2">Authors: ${article.authors}</p>
+                    <p class="text-gray-600 mb-2">Date: ${article.date}</p>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        ${(article.categories || []).map(category => `
+                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                                ${category}
+                            </span>
+                        `).join('')}
+                    </div>
+                    <p class="text-gray-700">${article.abstract}</p>
+                </div>
+            `).join('');
+        };
+
+        window.renderExistingCategories = async function() {
+            const container = document.getElementById('existing-categories');
+            const articles = await window.getArticlesFromStorage();
+            const categories = new Set(articles.flatMap(article => article.categories || []));
+            
+            container.innerHTML = Array.from(categories).map(category => `
+                <button type="button"
+                    class="existing-category px-3 py-1 rounded-full text-sm font-medium
+                    ${window.selectedCategories.has(category) 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
+                    onclick="toggleCategory('${category}')"
+                    data-category="${category}">
+                    ${category}
+                </button>
+            `).join('');
+        };
+
+        window.renderSelectedCategories = function() {
+            const container = document.getElementById('selected-categories');
+            container.innerHTML = Array.from(window.selectedCategories || new Set()).map(category => `
+                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                    ${category}
+                    <button type="button" 
+                        onclick="removeCategory('${category}')"
+                        class="text-blue-600 hover:text-blue-800">
+                        ×
+                    </button>
+                </span>
+            `).join('');
+        };
     </script>
 
-    <!-- 4. 加载其他脚本 -->
-    <script src="js/data.js"></script>
-    <script src="js/admin.js"></script>
-
-    <!-- 5. 保持页面初始化脚本不变 -->
+    <!-- 3. 页面初始化脚本 -->
     <script>
         // 确保所有必要的函数都已加载
         function checkRequiredFunctions() {
