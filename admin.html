@@ -299,7 +299,7 @@
                 window.renderArticlesList();
                 window.renderExistingCategories();
 
-                // 重置上传区域
+                // 重���上传区域
                 document.getElementById('excel-file').value = '';
                 document.getElementById('preview-area').classList.add('hidden');
                 
@@ -325,7 +325,7 @@
                     throw new Error('Please fill in all required fields');
                 }
 
-                console.log('Starting file upload...');
+                console.log('Starting article save...');
 
                 // 创建文章对象
                 const newArticle = {
@@ -343,10 +343,8 @@
                 const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
                 newArticle.id = maxId + 1;
 
-                // 添加新文章
+                // 添加新文章并保存
                 articles.push(newArticle);
-                
-                // 保存到 GitHub
                 await window.saveArticlesToStorage(articles);
                 
                 console.log('Article saved successfully:', newArticle);
@@ -449,7 +447,7 @@
                 window.renderExistingCategories();
                 window.renderSelectedCategories();
 
-                // 添��分类输入框事件监听
+                // 添加分类输入框事件监听
                 const categoryInputs = document.querySelectorAll('.category-input');
                 categoryInputs.forEach(input => {
                     input.addEventListener('keypress', (e) => {

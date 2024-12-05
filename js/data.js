@@ -79,9 +79,12 @@ async function getArticlesFromGitHub() {
     }
 }
 
-// 保存文章数据到 GitHub
+// 修改保存函数
 async function saveArticlesToGitHub(articles) {
     try {
+        // 将数据转换为 Base64
+        const content = utf8ToBase64(JSON.stringify(articles, null, 2));
+
         // 获取现有文件的 SHA（如果存在）
         let sha = '';
         try {
@@ -96,14 +99,13 @@ async function saveArticlesToGitHub(articles) {
                 sha = data.sha;
             }
         } catch (error) {
-            console.log('File does not exist yet');
+            console.log('File does not exist yet, creating new file');
         }
 
-        // 准备文件内容
-        const content = btoa(JSON.stringify(articles, null, 2));
+        // 准备请求体
         const body = {
             message: 'Update articles data',
-            content,
+            content: content,
             branch: GITHUB_CONFIG.BRANCH
         };
 
@@ -111,8 +113,8 @@ async function saveArticlesToGitHub(articles) {
             body.sha = sha;
         }
 
-        // 保存到 GitHub
-        const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
+        // 发送请求
+        const saveResponse = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
@@ -122,15 +124,25 @@ async function saveArticlesToGitHub(articles) {
             body: JSON.stringify(body)
         });
 
-        if (!response.ok) {
-            throw new Error('Failed to save articles');
+        if (!saveResponse.ok) {
+            const errorData = await saveResponse.json();
+            throw new Error(`GitHub API Error: ${errorData.message}`);
         }
 
         console.log('Articles saved successfully');
+        return true;
     } catch (error) {
         console.error('Error saving articles:', error);
         throw error;
     }
+}
+
+// 添加 UTF-8 编码辅助函数
+function utf8ToBase64(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+        function toSolidBytes(match, p1) {
+            return String.fromCharCode('0x' + p1);
+        }));
 }
 
 // 导出函数
