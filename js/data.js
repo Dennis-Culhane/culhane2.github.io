@@ -58,7 +58,7 @@ const defaultArticles = [
 // 从 GitHub 获取文章数据
 async function getArticlesFromGitHub() {
     try {
-        const response = await fetch(`${GITHUB_REPO_URL}/contents/data/articles.json`, {
+        const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
             headers: {
                 'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
                 'Accept': 'application/vnd.github.v3+json'
@@ -66,7 +66,7 @@ async function getArticlesFromGitHub() {
         });
 
         if (response.status === 404) {
-            // 如果文件不存在，返回默认数据
+            console.log('Articles file not found, using default data');
             return defaultArticles;
         }
 
@@ -74,7 +74,7 @@ async function getArticlesFromGitHub() {
         const content = atob(data.content);
         return JSON.parse(content);
     } catch (error) {
-        console.error('Error fetching articles from GitHub:', error);
+        console.error('Error fetching articles:', error);
         return defaultArticles;
     }
 }
@@ -82,10 +82,10 @@ async function getArticlesFromGitHub() {
 // 保存文章数据到 GitHub
 async function saveArticlesToGitHub(articles) {
     try {
-        // 首先获取现有文件的 SHA（如果存在）
+        // 获取现有文件的 SHA（如果存在）
         let sha = '';
         try {
-            const response = await fetch(`${GITHUB_REPO_URL}/contents/data/articles.json`, {
+            const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
                 headers: {
                     'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json'
@@ -99,7 +99,7 @@ async function saveArticlesToGitHub(articles) {
             console.log('File does not exist yet');
         }
 
-        // 准备更新或创建文件
+        // 准备文件内容
         const content = btoa(JSON.stringify(articles, null, 2));
         const body = {
             message: 'Update articles data',
@@ -111,8 +111,8 @@ async function saveArticlesToGitHub(articles) {
             body.sha = sha;
         }
 
-        // 发送请求
-        const response = await fetch(`${GITHUB_REPO_URL}/contents/data/articles.json`, {
+        // 保存到 GitHub
+        const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
@@ -123,16 +123,16 @@ async function saveArticlesToGitHub(articles) {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to save articles to GitHub');
+            throw new Error('Failed to save articles');
         }
 
-        console.log('Articles saved to GitHub successfully');
+        console.log('Articles saved successfully');
     } catch (error) {
-        console.error('Error saving articles to GitHub:', error);
+        console.error('Error saving articles:', error);
         throw error;
     }
 }
 
-// 导出函数供其他文件使用
+// 导出函数
 window.getArticlesFromStorage = getArticlesFromGitHub;
 window.saveArticlesToStorage = saveArticlesToGitHub;
