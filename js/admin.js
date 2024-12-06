@@ -258,7 +258,11 @@ async function handleBulkUpload(event) {
         const data = await readExcelFile(excelFile);
         console.log('Excel data:', data);
 
-        // 显示预览
+        if (!Array.isArray(data) || data.length === 0) {
+            throw new Error('No valid data found in Excel file');
+        }
+
+        // Show preview
         const previewArea = document.getElementById('preview-area');
         previewArea.classList.remove('hidden');
         previewArea.innerHTML = `
@@ -288,21 +292,51 @@ async function handleBulkUpload(event) {
             </button>
         `;
 
-        // 添加确认按钮事件处理
+        // Add confirm button handler
         document.getElementById('confirm-batch-upload').onclick = async () => {
             try {
-                await confirmBatchUpload(data);
+                // Get existing articles
+                let articles = await getArticlesFromStorage();
+                console.log('Current articles:', articles);
+
+                // Ensure articles is an array
+                articles = Array.isArray(articles) ? articles : [];
+
+                // Get current max ID
+                const maxId = articles.length > 0 
+                    ? Math.max(...articles.map(a => parseInt(a.id) || 0)) 
+                    : 0;
+
+                // Process new articles
+                const newArticles = data.map((row, index) => ({
+                    id: maxId + index + 1,
+                    title: String(row.Title || '').trim(),
+                    authors: String(row.Authors || '').trim(),
+                    date: String(row.Date || '').trim(),
+                    categories: row.Categories 
+                        ? String(row.Categories).split(',').map(c => c.trim())
+                        : [],
+                    abstract: String(row.Abstract || '').trim(),
+                    fileName: String(row['PDF URL'] || '').split('/').pop(),
+                    pdfUrl: String(row['PDF URL'] || '').trim()
+                }));
+
+                // Combine and save
+                const updatedArticles = [...articles, ...newArticles];
+                await saveArticlesToStorage(updatedArticles);
+
+                // Clean up
                 previewArea.classList.add('hidden');
                 document.getElementById('excel-file').value = '';
                 alert('Batch upload completed successfully!');
             } catch (error) {
-                console.error('Batch upload error:', error);
+                console.error('Error in batch upload:', error);
                 alert('Batch upload failed: ' + error.message);
             }
         };
     } catch (error) {
-        console.error('Error in bulk upload:', error);
-        alert('Batch upload failed: ' + error.message);
+        console.error('Error processing Excel:', error);
+        alert('Error processing Excel file: ' + error.message);
     } finally {
         bulkUploadBtn.disabled = false;
         bulkUploadBtn.textContent = originalText;
@@ -458,6 +492,10 @@ async function readExcelFile(file) {
 // Batch upload confirmation handler
 async function confirmBatchUpload(data) {
     try {
+        if (!Array.isArray(data)) {
+            throw new Error('Invalid Excel data format');
+        }
+
         console.log('Starting batch upload with data:', data);
         
         // Get existing articles
@@ -465,31 +503,50 @@ async function confirmBatchUpload(data) {
         console.log('Existing articles:', articles);
 
         // Ensure articles is an array
-        if (!Array.isArray(articles)) {
-            console.log('Articles is not an array, initializing empty array');
-            articles = [];
-        }
+        articles = Array.isArray(articles) ? articles : [];
+        console.log('Articles after array check:', articles);
 
         // Get current max ID
-        const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
+        const maxId = articles.length > 0 ? Math.max(...articles.map(a => parseInt(a.id) || 0)) : 0;
         console.log('Current max ID:', maxId);
 
         // Convert data format
         const newArticles = data.map((row, index) => {
+            console.log(`Processing row ${index + 1}:`, row);
+
             // Validate required fields
-            if (!row.Title || !row.Authors || !row.Date || !row.Abstract || !row['PDF URL']) {
-                throw new Error(`Row ${index + 1} is incomplete. Please check all required fields`);
+            const requiredFields = ['Title', 'Authors', 'Date', 'Abstract', 'PDF URL'];
+            const missingFields = requiredFields.filter(field => !row[field]);
+            
+            if (missingFields.length > 0) {
+                throw new Error(`Row ${index + 1} is missing required fields: ${missingFields.join(', ')}`);
+            }
+
+            // Safely get and clean field values
+            const getField = (field) => {
+                const value = row[field];
+                if (value === null || value === undefined) {
+                    return '';
+                }
+                return String(value).trim();
+            };
+
+            // Process categories
+            let categories = [];
+            if (row.Categories) {
+                const categoriesStr = String(row.Categories);
+                categories = categoriesStr.split(',').map(c => c.trim()).filter(c => c);
             }
 
             return {
                 id: maxId + index + 1,
-                title: row.Title,
-                authors: row.Authors,
-                date: row.Date,
-                categories: row.Categories ? row.Categories.split(',').map(c => c.trim()) : [],
-                abstract: row.Abstract,
-                fileName: row['PDF URL'].split('/').pop(),
-                pdfUrl: row['PDF URL']
+                title: getField('Title'),
+                authors: getField('Authors'),
+                date: getField('Date'),
+                categories: categories,
+                abstract: getField('Abstract'),
+                fileName: getField('PDF URL').split('/').pop(),
+                pdfUrl: getField('PDF URL')
             };
         });
 
@@ -503,7 +560,9 @@ async function confirmBatchUpload(data) {
         await saveArticlesToStorage(updatedArticles);
         
         // Update UI
-        await renderArticlesList();
+        if (typeof renderArticlesList === 'function') {
+            await renderArticlesList();
+        }
         if (typeof window.renderExistingCategories === 'function') {
             await window.renderExistingCategories();
         }
@@ -533,44 +592,65 @@ async function getArticlesFromStorage() {
         }
 
         if (!response.ok) {
-            throw new Error('Failed to fetch articles');
+            console.error('Failed to fetch articles:', response.status, response.statusText);
+            return [];
         }
 
         const data = await response.json();
+        console.log('Raw GitHub response:', data);
+
+        // Decode base64 content
         const content = atob(data.content);
-        const articles = JSON.parse(content);
-        
-        // Ensure we always return an array
-        if (!Array.isArray(articles)) {
-            console.warn('Articles data is not an array, returning empty array');
+        console.log('Decoded content:', content);
+
+        try {
+            // Parse JSON content
+            const parsedData = JSON.parse(content);
+            console.log('Parsed data:', parsedData);
+
+            // Ensure we have an array
+            const articles = Array.isArray(parsedData) ? parsedData : [];
+            console.log('Final articles array:', articles);
+
+            return articles;
+        } catch (parseError) {
+            console.error('Error parsing JSON:', parseError);
             return [];
         }
-        
-        console.log('Articles fetched successfully:', articles.length);
-        return articles;
     } catch (error) {
-        console.error('Error fetching articles:', error);
+        console.error('Error in getArticlesFromStorage:', error);
         return [];
     }
 }
 
 async function saveArticlesToStorage(articles) {
     try {
-        console.log('Saving articles to GitHub...');
-        
-        // Use UTF-8 encoding
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(articles, null, 2))));
-        
-        // Get existing file SHA
+        // Ensure we have an array
+        const articlesArray = Array.isArray(articles) ? articles : [];
+        console.log('Saving articles:', articlesArray);
+
+        // Convert to JSON string with pretty printing
+        const jsonContent = JSON.stringify(articlesArray, null, 2);
+        console.log('JSON content:', jsonContent);
+
+        // Convert to base64
+        const base64Content = btoa(unescape(encodeURIComponent(jsonContent)));
+        console.log('Base64 content length:', base64Content.length);
+
+        // Get existing file SHA if it exists
         let sha = '';
         try {
-            const getResponse = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
-                headers: getAuthHeaders()
+            const checkResponse = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
+                headers: {
+                    'Authorization': `Bearer ${window.getGitHubToken()}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
             });
             
-            if (getResponse.ok) {
-                const data = await getResponse.json();
+            if (checkResponse.ok) {
+                const data = await checkResponse.json();
                 sha = data.sha;
+                console.log('Existing file SHA:', sha);
             }
         } catch (error) {
             console.log('No existing file found');
@@ -579,7 +659,7 @@ async function saveArticlesToStorage(articles) {
         // Prepare request body
         const body = {
             message: 'Update articles data',
-            content: content,
+            content: base64Content,
             branch: window.GITHUB_CONFIG.BRANCH
         };
 
@@ -587,12 +667,13 @@ async function saveArticlesToStorage(articles) {
             body.sha = sha;
         }
 
-        // Send save request
+        console.log('Sending request to GitHub...');
         const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
             method: 'PUT',
             headers: {
-                ...getAuthHeaders(),
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${window.getGitHubToken()}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify(body)
         });
@@ -602,10 +683,11 @@ async function saveArticlesToStorage(articles) {
             throw new Error(`GitHub API Error: ${errorData.message}`);
         }
 
-        console.log('Articles saved successfully');
+        const responseData = await response.json();
+        console.log('Save successful:', responseData);
         return true;
     } catch (error) {
-        console.error('Error saving articles:', error);
+        console.error('Error in saveArticlesToStorage:', error);
         throw error;
     }
 }
