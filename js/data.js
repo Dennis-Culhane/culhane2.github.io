@@ -1,33 +1,5 @@
 // Shared data handling functions
 window.ArticlesManager = {
-    // Validate article data
-    validateArticleData(articleData) {
-        if (!articleData) {
-            throw new Error('Article data is required');
-        }
-        if (!articleData.title || articleData.title.trim() === '') {
-            throw new Error('Article title is required');
-        }
-        if (!articleData.authors || articleData.authors.trim() === '') {
-            throw new Error('Article authors are required');
-        }
-        return true;
-    },
-
-    // Validate PDF file
-    validatePDFFile(file) {
-        if (!file) {
-            throw new Error('PDF file is required');
-        }
-        if (!file.name || !file.name.toLowerCase().endsWith('.pdf')) {
-            throw new Error('File must be a PDF');
-        }
-        if (file.size > 50 * 1024 * 1024) { // 50MB limit
-            throw new Error('PDF file size must be less than 50MB');
-        }
-        return true;
-    },
-
     // Get articles from GitHub storage
     async getArticles() {
         try {
@@ -44,8 +16,7 @@ window.ArticlesManager = {
             });
 
             if (response.status === 404) {
-                console.log('No articles file found, creating new file');
-                await this.saveArticles([]);
+                console.log('No articles file found, initializing with empty array');
                 return [];
             }
 
@@ -78,7 +49,7 @@ window.ArticlesManager = {
             return articles;
         } catch (error) {
             console.error('Error loading articles:', error);
-            throw error;
+            return [];
         }
     },
 
@@ -173,7 +144,10 @@ window.ArticlesManager = {
                 throw new Error('GitHub token is not set');
             }
 
-            this.validatePDFFile(file);
+            if (!file) {
+                throw new Error('PDF file is required');
+            }
+
             console.log('Uploading PDF:', file.name);
 
             // Convert file to base64
@@ -258,33 +232,41 @@ window.ArticlesManager = {
                 throw new Error('GitHub token is not set');
             }
 
-            // Validate inputs
-            this.validateArticleData(articleData);
-            this.validatePDFFile(pdfFile);
+            if (!articleData || !articleData.title || !articleData.authors) {
+                throw new Error('Article title and authors are required');
+            }
+
+            if (!pdfFile) {
+                throw new Error('PDF file is required');
+            }
 
             // Get current articles first
             let articles = await this.getArticles();
+            console.log('Current articles:', articles);
+
+            // Ensure articles is an array
             if (!Array.isArray(articles)) {
+                console.log('Articles is not an array, initializing empty array');
                 articles = [];
             }
-            
+
             // Upload PDF
             const pdfUrl = await this.uploadPDF(pdfFile);
-            
-            // Generate new ID
-            const newId = (articles.length + 1).toString();
+            console.log('PDF uploaded, URL:', pdfUrl);
 
             // Create new article
             const newArticle = {
-                id: newId,
+                id: (articles.length + 1).toString(),
                 title: articleData.title.trim(),
                 authors: articleData.authors.trim(),
                 date: articleData.date || new Date().toISOString().split('T')[0],
-                categories: Array.isArray(articleData.categories) ? articleData.categories.filter(c => c && c.trim()) : [],
-                abstract: (articleData.abstract || '').trim(),
+                categories: Array.isArray(articleData.categories) ? articleData.categories.filter(Boolean) : [],
+                abstract: articleData.abstract ? articleData.abstract.trim() : '',
                 fileName: pdfFile.name,
                 pdfUrl: pdfUrl
             };
+
+            console.log('New article object:', newArticle);
 
             // Add to articles array
             articles.push(newArticle);
@@ -308,28 +290,23 @@ window.ArticlesManager = {
             }
 
             let articles = await this.getArticles();
-            if (!Array.isArray(articles)) {
-                articles = [];
-            }
+            console.log('Rendering articles:', articles);
 
             const container = document.getElementById(containerId);
             if (!container) {
                 throw new Error(`Container ${containerId} not found`);
             }
 
-            if (articles.length === 0) {
+            if (!Array.isArray(articles) || articles.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-center">No articles found.</p>';
                 return;
             }
 
             // Sort articles by date (newest first)
             articles.sort((a, b) => {
-                try {
-                    return new Date(b.date || 0) - new Date(a.date || 0);
-                } catch (error) {
-                    console.warn('Error sorting articles by date:', error);
-                    return 0;
-                }
+                const dateA = a.date ? new Date(a.date) : new Date(0);
+                const dateB = b.date ? new Date(b.date) : new Date(0);
+                return dateB - dateA;
             });
 
             container.innerHTML = articles.map(article => {

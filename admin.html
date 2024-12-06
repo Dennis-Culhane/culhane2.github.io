@@ -8,7 +8,6 @@
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/data.js"></script>
-    <script src="js/admin.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen p-8">
     <div class="max-w-4xl mx-auto space-y-8">
@@ -40,7 +39,7 @@
             <!-- Single Article Upload -->
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h2 class="text-2xl font-bold mb-6">Add Article</h2>
-                <form id="article-form" class="space-y-6" onsubmit="return false;">
+                <form id="article-form" class="space-y-6">
                     <div>
                         <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
                         <input type="text" id="title" name="title" required
@@ -60,47 +59,31 @@
                     </div>
 
                     <div>
+                        <label for="categories" class="block text-sm font-medium text-gray-700">Categories (comma-separated)</label>
+                        <input type="text" id="categories" name="categories"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="e.g. Research, Academic, Publication">
+                    </div>
+
+                    <div>
                         <label for="abstract" class="block text-sm font-medium text-gray-700">Abstract</label>
                         <textarea id="abstract" name="abstract" rows="4" required
                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
                     </div>
 
                     <div>
-                        <label for="pdf-file" class="block text-sm font-medium text-gray-700">PDF File</label>
-                        <input type="file" id="pdf-file" name="pdf-file" accept=".pdf" required
+                        <label for="pdf" class="block text-sm font-medium text-gray-700">PDF File</label>
+                        <input type="file" id="pdf" name="pdf" accept=".pdf" required
                             class="mt-1 block w-full py-2 px-3">
                     </div>
 
                     <div>
-                        <button type="button" onclick="handleArticleSubmit(event)"
+                        <button type="submit"
                             class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             Add Article
                         </button>
                     </div>
                 </form>
-            </div>
-
-            <!-- Batch Upload -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-bold mb-6">Batch Upload</h2>
-                <div class="space-y-6">
-                    <div>
-                        <label for="excel-file" class="block text-sm font-medium text-gray-700">Excel File</label>
-                        <input type="file" id="excel-file" accept=".xlsx, .xls"
-                            class="mt-1 block w-full py-2 px-3">
-                    </div>
-
-                    <div>
-                        <button type="button" id="batch-upload-btn" onclick="handleBulkUpload(event)"
-                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            Upload Batch
-                        </button>
-                    </div>
-
-                    <div id="preview-area" class="mt-4 hidden">
-                        <!-- Preview content will be displayed here -->
-                    </div>
-                </div>
             </div>
 
             <!-- Articles List -->
@@ -112,9 +95,8 @@
 
     <script>
         // Token handling
-        async function handleTokenSubmit() {
+        document.getElementById('save-token-btn').addEventListener('click', async function() {
             const tokenInput = document.getElementById('github-token');
-            const saveButton = document.getElementById('save-token-btn');
             const token = tokenInput.value.trim();
 
             if (!token) {
@@ -122,9 +104,9 @@
                 return;
             }
 
-            saveButton.disabled = true;
-            const originalText = saveButton.textContent;
-            saveButton.textContent = 'Verifying...';
+            this.disabled = true;
+            const originalText = this.textContent;
+            this.textContent = 'Verifying...';
 
             try {
                 const response = await fetch('https://api.github.com/user', {
@@ -149,10 +131,42 @@
                 console.error('Token verification failed:', error);
                 alert('Token verification failed: ' + error.message);
             } finally {
-                saveButton.disabled = false;
-                saveButton.textContent = originalText;
+                this.disabled = false;
+                this.textContent = originalText;
             }
-        }
+        });
+
+        // Form submission
+        document.getElementById('article-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                const formData = new FormData(this);
+                const articleData = {
+                    title: formData.get('title'),
+                    authors: formData.get('authors'),
+                    date: formData.get('date'),
+                    categories: formData.get('categories') ? formData.get('categories').split(',').map(c => c.trim()).filter(Boolean) : [],
+                    abstract: formData.get('abstract')
+                };
+                
+                const pdfFile = formData.get('pdf');
+                
+                // Add article
+                await ArticlesManager.addArticle(articleData, pdfFile);
+                
+                // Clear form
+                this.reset();
+                
+                // Refresh articles list
+                await ArticlesManager.renderArticles('articles-list', true);
+                
+                alert('Article added successfully!');
+            } catch (error) {
+                console.error('Error saving article:', error);
+                alert('Error saving article: ' + error.message);
+            }
+        });
 
         // Check for existing token
         document.addEventListener('DOMContentLoaded', async function() {

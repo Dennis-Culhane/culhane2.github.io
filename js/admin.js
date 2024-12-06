@@ -803,3 +803,36 @@ const GITHUB_CONFIG = {
 // GitHub API URLs
 const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}`;
 const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}/${GITHUB_CONFIG.BRANCH}`;
+
+// 处理表单提交
+document.getElementById('article-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    try {
+        // 获取表单数据
+        const formData = new FormData(this);
+        const articleData = {
+            title: formData.get('title'),
+            authors: formData.get('authors'),
+            date: formData.get('date'),
+            categories: formData.get('categories') ? formData.get('categories').split(',').map(c => c.trim()) : [],
+            abstract: formData.get('abstract')
+        };
+        
+        const pdfFile = formData.get('pdf');
+        
+        // 添加文章
+        await ArticlesManager.addArticle(articleData, pdfFile);
+        
+        // 清空表单
+        this.reset();
+        
+        // 刷新文章列表
+        await ArticlesManager.renderArticles('articles-list', true);
+        
+        alert('Article added successfully!');
+    } catch (error) {
+        console.error('Error saving article:', error);
+        alert('Error saving article: ' + error.message);
+    }
+});
