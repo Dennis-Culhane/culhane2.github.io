@@ -1,168 +1,164 @@
-const GITHUB_REPO_URL = 'https://dennis-culhane.github.io/culhane2.github.io';
+// Shared data handling functions
+window.ArticlesManager = {
+    // Get articles from GitHub storage
+    async getArticles() {
+        try {
+            console.log('Fetching articles from GitHub...');
+            const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
+                headers: {
+                    'Authorization': `Bearer ${window.getGitHubToken()}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
 
-const researchAreas = [
-    "Homelessness",
-    "Housing Policy",
-    "Social Policy",
-    "Integrated Data Systems",
-    "Policy Analysis"
-];
-
-const shortBio = "Dennis P. Culhane is the Dana and Andrew Stone Professor of Social Policy...";
-
-const fullBio = `
-    <p>Dennis P. Culhane is the Dana and Andrew Stone Professor...</p>
-    <!-- 其他简介内容 -->
-`;
-
-// 默认文章数据
-const defaultArticles = [
-    {
-        id: 1,
-        title: "Understanding Homelessness Prevention",
-        authors: "Dennis P. Culhane, Dan Treglia, Randall Kuhn",
-        date: "2023",
-        categories: ["Homelessness", "Policy Analysis"],
-        abstract: "This paper examines the effectiveness of homelessness prevention programs...",
-        pdfUrl: `${GITHUB_REPO_URL}/papers/homelessness-prevention-2023.pdf`
-    },
-    {
-        id: 2,
-        title: "Integrated Data Systems in Policy Research",
-        authors: "Dennis P. Culhane, John Fantuzzo",
-        date: "2022",
-        categories: ["Integrated Data Systems", "Policy Analysis"],
-        abstract: "A comprehensive review of integrated data systems...",
-        pdfUrl: `${GITHUB_REPO_URL}/papers/integrated-data-2022.pdf`
-    },
-    {
-        id: 3,
-        title: "Housing First for People with Severe Mental Illness",
-        authors: "Dennis P. Culhane, Stephen Metraux",
-        date: "2023",
-        categories: ["Housing Policy", "Social Policy"],
-        abstract: "An evaluation of Housing First programs for individuals with severe mental illness...",
-        pdfUrl: `${GITHUB_REPO_URL}/papers/housing-first-2023.pdf`
-    },
-    {
-        id: 4,
-        title: "Youth Homelessness: Patterns and Interventions",
-        authors: "Dennis P. Culhane, Matthew Morton",
-        date: "2022",
-        categories: ["Homelessness", "Social Policy"],
-        abstract: "A comprehensive analysis of youth homelessness patterns and effective interventions...",
-        pdfUrl: `${GITHUB_REPO_URL}/papers/youth-homelessness-2022.pdf`
-    }
-];
-
-// 修改 GitHub API URL 和数据存储路径
-const GITHUB_API_URL = 'https://api.github.com/repos/Dennis-Culhane/culhane2.github.io';
-const DATA_PATH = 'data/articles.json';
-
-// 从 GitHub 获取文章数据
-async function getArticlesFromGitHub() {
-    try {
-        console.log('Fetching articles from GitHub...');
-        const response = await fetch(`${GITHUB_API_URL}/contents/${DATA_PATH}`, {
-            headers: {
-                'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json'
+            if (response.status === 404) {
+                console.log('No articles file found');
+                return [];
             }
-        });
 
-        if (response.status === 404) {
-            console.log('No articles file found, returning empty array');
+            if (!response.ok) {
+                throw new Error(`Failed to fetch articles: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            const content = atob(data.content);
+            const articles = JSON.parse(content);
+
+            if (!Array.isArray(articles)) {
+                console.warn('Articles data is not an array');
+                return [];
+            }
+
+            console.log('Articles loaded:', articles.length);
+            return articles;
+        } catch (error) {
+            console.error('Error loading articles:', error);
             return [];
         }
+    },
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch articles');
+    // Save articles to GitHub storage
+    async saveArticles(articles) {
+        if (!Array.isArray(articles)) {
+            throw new Error('Articles must be an array');
         }
 
-        const data = await response.json();
-        const content = atob(data.content);
-        const articles = JSON.parse(content);
-        console.log('Articles fetched successfully:', articles.length);
-        return articles;
-    } catch (error) {
-        console.error('Error fetching articles:', error);
-        return [];
-    }
-}
+        console.log('Saving articles:', articles);
 
-// 保存文章数据到 GitHub
-async function saveArticlesToGitHub(articles) {
-    try {
-        console.log('Starting save to GitHub...');
-        
-        // 获取现有文件的 SHA
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(articles, null, 2))));
+
+        // Get existing file SHA
         let sha = '';
         try {
-            const response = await fetch(`${GITHUB_API_URL}/contents/${DATA_PATH}`, {
+            const checkResponse = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
                 headers: {
-                    'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                    'Authorization': `Bearer ${window.getGitHubToken()}`,
                     'Accept': 'application/vnd.github.v3+json'
                 }
             });
             
-            if (response.ok) {
-                const data = await response.json();
+            if (checkResponse.ok) {
+                const data = await checkResponse.json();
                 sha = data.sha;
-                console.log('Existing file SHA:', sha);
             }
         } catch (error) {
             console.log('No existing file found');
         }
 
-        // 准备文件内容
-        const content = utf8ToBase64(JSON.stringify(articles, null, 2));
-        
-        // 准备请求体
+        // Prepare request
         const body = {
             message: 'Update articles data',
             content: content,
-            branch: 'main'
+            branch: window.GITHUB_CONFIG.BRANCH
         };
 
         if (sha) {
             body.sha = sha;
         }
 
-        // 发送保存请求
-        console.log('Sending save request...');
-        const saveResponse = await fetch(`${GITHUB_API_URL}/contents/${DATA_PATH}`, {
+        // Save to GitHub
+        const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                'Authorization': `Bearer ${window.getGitHubToken()}`,
                 'Content-Type': 'application/json',
                 'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify(body)
         });
 
-        if (!saveResponse.ok) {
-            const errorData = await saveResponse.json();
-            console.error('GitHub API Error:', errorData);
+        if (!response.ok) {
+            const errorData = await response.json();
             throw new Error(`GitHub API Error: ${errorData.message}`);
         }
 
-        const responseData = await saveResponse.json();
-        console.log('Save successful:', responseData);
         return true;
-    } catch (error) {
-        console.error('Error saving articles:', error);
-        throw new Error('Failed to save articles: ' + error.message);
+    },
+
+    // Render articles list (shared between admin and index pages)
+    async renderArticles(containerId, isAdmin = false) {
+        try {
+            const articles = await this.getArticles();
+            const container = document.getElementById(containerId);
+            
+            if (!container) {
+                console.error(`Container ${containerId} not found`);
+                return;
+            }
+
+            if (!Array.isArray(articles) || articles.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No articles found.</p>';
+                return;
+            }
+
+            // Sort articles by date (newest first)
+            articles.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            container.innerHTML = articles.map(article => `
+                <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+                    <h3 class="text-xl font-bold mb-2">${article.title}</h3>
+                    <p class="text-gray-600 mb-2">Authors: ${article.authors}</p>
+                    <p class="text-gray-600 mb-2">Date: ${article.date}</p>
+                    ${article.categories && article.categories.length > 0 ? 
+                        `<p class="text-gray-600 mb-2">Categories: ${article.categories.join(', ')}</p>` : ''}
+                    <p class="text-gray-700 mb-4">${article.abstract}</p>
+                    <div class="flex justify-between items-center">
+                        <a href="${article.pdfUrl}" target="_blank" 
+                            class="text-blue-600 hover:text-blue-800">
+                            View PDF
+                        </a>
+                        ${isAdmin ? `
+                            <button onclick="ArticlesManager.deleteArticle(${article.id})" 
+                                class="text-red-600 hover:text-red-800">
+                                Delete
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error rendering articles:', error);
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = '<p class="text-red-500 text-center">Error loading articles.</p>';
+            }
+        }
+    },
+
+    // Delete article (admin only)
+    async deleteArticle(id) {
+        if (!confirm('Are you sure you want to delete this article?')) {
+            return;
+        }
+
+        try {
+            let articles = await this.getArticles();
+            articles = articles.filter(article => article.id !== id);
+            await this.saveArticles(articles);
+            await this.renderArticles('articles-list', true);
+        } catch (error) {
+            console.error('Error deleting article:', error);
+            alert('Error deleting article: ' + error.message);
+        }
     }
-}
-
-// UTF-8 编码辅助函数
-function utf8ToBase64(str) {
-    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-        function toSolidBytes(match, p1) {
-            return String.fromCharCode('0x' + p1);
-        }));
-}
-
-// 导出函数
-window.getArticlesFromStorage = getArticlesFromGitHub;
-window.saveArticlesToStorage = saveArticlesToGitHub;
+};
