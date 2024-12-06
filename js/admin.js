@@ -432,7 +432,7 @@ function renderSelectedCategories() {
     `).join('');
 }
 
-// Excel文件处理函数
+// Excel file handler
 async function readExcelFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -455,16 +455,28 @@ async function readExcelFile(file) {
     });
 }
 
-// 批量上传确认处理
+// Batch upload confirmation handler
 async function confirmBatchUpload(data) {
     try {
-        // 获取现有文章
-        const articles = await window.getArticlesFromStorage() || [];
-        const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
+        console.log('Starting batch upload with data:', data);
+        
+        // Get existing articles
+        let articles = await getArticlesFromStorage();
+        console.log('Existing articles:', articles);
 
-        // 转换数据格式
-        const newArticles = await Promise.all(data.map(async (row, index) => {
-            // 验证必需字段
+        // Ensure articles is an array
+        if (!Array.isArray(articles)) {
+            console.log('Articles is not an array, initializing empty array');
+            articles = [];
+        }
+
+        // Get current max ID
+        const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
+        console.log('Current max ID:', maxId);
+
+        // Convert data format
+        const newArticles = data.map((row, index) => {
+            // Validate required fields
             if (!row.Title || !row.Authors || !row.Date || !row.Abstract || !row['PDF URL']) {
                 throw new Error(`Row ${index + 1} is incomplete. Please check all required fields`);
             }
@@ -479,16 +491,19 @@ async function confirmBatchUpload(data) {
                 fileName: row['PDF URL'].split('/').pop(),
                 pdfUrl: row['PDF URL']
             };
-        }));
+        });
 
-        // 添加新文章
+        console.log('Processed new articles:', newArticles);
+
+        // Add new articles
         const updatedArticles = [...articles, ...newArticles];
+        console.log('Updated articles array:', updatedArticles);
         
-        // 保存更新后的文章列表
-        await window.saveArticlesToStorage(updatedArticles);
+        // Save updated article list
+        await saveArticlesToStorage(updatedArticles);
         
-        // 更新界面
-        await window.renderArticlesList();
+        // Update UI
+        await renderArticlesList();
         if (typeof window.renderExistingCategories === 'function') {
             await window.renderExistingCategories();
         }
@@ -506,7 +521,10 @@ async function getArticlesFromStorage() {
     try {
         console.log('Fetching articles from GitHub...');
         const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
-            headers: getAuthHeaders()
+            headers: {
+                'Authorization': `Bearer ${window.getGitHubToken()}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
         });
 
         if (response.status === 404) {
@@ -521,6 +539,13 @@ async function getArticlesFromStorage() {
         const data = await response.json();
         const content = atob(data.content);
         const articles = JSON.parse(content);
+        
+        // Ensure we always return an array
+        if (!Array.isArray(articles)) {
+            console.warn('Articles data is not an array, returning empty array');
+            return [];
+        }
+        
         console.log('Articles fetched successfully:', articles.length);
         return articles;
     } catch (error) {
