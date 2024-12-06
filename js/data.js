@@ -1,24 +1,33 @@
 // Shared data handling functions
 window.ArticlesManager = {
     // Get articles from GitHub storage
-    async getArticles() {
+    async getArticles(useToken = false) {
         try {
             console.log('Fetching articles from GitHub...');
-            if (!window.getGitHubToken()) {
-                throw new Error('GitHub token is not set');
+            
+            // 构建请求头
+            const headers = {
+                'Accept': 'application/vnd.github.v3+json'
+            };
+            
+            // 仅在需要时添加 token
+            if (useToken) {
+                const token = window.getGitHubToken();
+                if (!token) {
+                    throw new Error('GitHub token is not set');
+                }
+                headers['Authorization'] = `Bearer ${token}`;
             }
 
             const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
-                headers: {
-                    'Authorization': `Bearer ${window.getGitHubToken()}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
+                headers: headers
             });
 
             if (response.status === 404) {
                 console.log('No articles file found, initializing with empty array');
-                // 创建初始的 articles.json 文件
-                await this.saveArticles([]);
+                if (useToken) {
+                    await this.saveArticles([]);
+                }
                 return [];
             }
 
@@ -55,10 +64,11 @@ window.ArticlesManager = {
         }
     },
 
-    // Save articles to GitHub storage
+    // Save articles to GitHub storage (需要 token)
     async saveArticles(articles) {
         try {
-            if (!window.getGitHubToken()) {
+            const token = window.getGitHubToken();
+            if (!token) {
                 throw new Error('GitHub token is not set');
             }
 
@@ -91,7 +101,7 @@ window.ArticlesManager = {
             try {
                 const checkResponse = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
                     headers: {
-                        'Authorization': `Bearer ${window.getGitHubToken()}`,
+                        'Authorization': `Bearer ${token}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -119,7 +129,7 @@ window.ArticlesManager = {
             const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${window.getGitHubToken()}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/vnd.github.v3+json'
                 },
@@ -142,10 +152,11 @@ window.ArticlesManager = {
         }
     },
 
-    // Upload PDF file to GitHub
+    // Upload PDF file to GitHub (需要 token)
     async uploadPDF(file) {
         try {
-            if (!window.getGitHubToken()) {
+            const token = window.getGitHubToken();
+            if (!token) {
                 throw new Error('GitHub token is not set');
             }
 
@@ -178,7 +189,7 @@ window.ArticlesManager = {
             try {
                 const dirResponse = await fetch(`${window.GITHUB_API_URL}/contents/papers`, {
                     headers: {
-                        'Authorization': `Bearer ${window.getGitHubToken()}`,
+                        'Authorization': `Bearer ${token}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -195,7 +206,7 @@ window.ArticlesManager = {
             try {
                 const checkResponse = await fetch(`${window.GITHUB_API_URL}/contents/papers/${encodeURIComponent(file.name)}`, {
                     headers: {
-                        'Authorization': `Bearer ${window.getGitHubToken()}`,
+                        'Authorization': `Bearer ${token}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -223,7 +234,7 @@ window.ArticlesManager = {
             const response = await fetch(`${window.GITHUB_API_URL}/contents/papers/${encodeURIComponent(file.name)}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${window.getGitHubToken()}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/vnd.github.v3+json'
                 },
@@ -249,10 +260,11 @@ window.ArticlesManager = {
         }
     },
 
-    // Add new article
+    // Add new article (需要 token)
     async addArticle(articleData, pdfFile) {
         try {
-            if (!window.getGitHubToken()) {
+            const token = window.getGitHubToken();
+            if (!token) {
                 throw new Error('GitHub token is not set');
             }
 
@@ -265,7 +277,7 @@ window.ArticlesManager = {
             }
 
             // Get current articles first
-            let articles = await this.getArticles();
+            let articles = await this.getArticles(true);
             console.log('Current articles:', articles);
 
             // Ensure articles is an array
@@ -313,7 +325,8 @@ window.ArticlesManager = {
                 throw new Error('Container ID is required');
             }
 
-            let articles = await this.getArticles();
+            // 如果是管理页面，使用 token 获取数据
+            let articles = await this.getArticles(isAdmin);
             console.log('Rendering articles:', articles);
 
             const container = document.getElementById(containerId);
@@ -371,10 +384,11 @@ window.ArticlesManager = {
         }
     },
 
-    // Delete article
+    // Delete article (需要 token)
     async deleteArticle(id) {
         try {
-            if (!window.getGitHubToken()) {
+            const token = window.getGitHubToken();
+            if (!token) {
                 throw new Error('GitHub token is not set');
             }
 
@@ -386,7 +400,7 @@ window.ArticlesManager = {
                 return;
             }
 
-            let articles = await this.getArticles();
+            let articles = await this.getArticles(true);
             if (!Array.isArray(articles)) {
                 articles = [];
                 return;
@@ -404,7 +418,7 @@ window.ArticlesManager = {
                     // Get the PDF file SHA
                     const pdfResponse = await fetch(`${window.GITHUB_API_URL}/contents/papers/${encodeURIComponent(article.fileName)}`, {
                         headers: {
-                            'Authorization': `Bearer ${window.getGitHubToken()}`,
+                            'Authorization': `Bearer ${token}`,
                             'Accept': 'application/vnd.github.v3+json'
                         }
                     });
@@ -415,7 +429,7 @@ window.ArticlesManager = {
                         const deleteResponse = await fetch(`${window.GITHUB_API_URL}/contents/papers/${encodeURIComponent(article.fileName)}`, {
                             method: 'DELETE',
                             headers: {
-                                'Authorization': `Bearer ${window.getGitHubToken()}`,
+                                'Authorization': `Bearer ${token}`,
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/vnd.github.v3+json'
                             },
