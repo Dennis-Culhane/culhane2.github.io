@@ -17,6 +17,8 @@ window.ArticlesManager = {
 
             if (response.status === 404) {
                 console.log('No articles file found, initializing with empty array');
+                // 创建初始的 articles.json 文件
+                await this.saveArticles([]);
                 return [];
             }
 
@@ -129,6 +131,9 @@ window.ArticlesManager = {
                 throw new Error(`GitHub API Error: ${errorData.message}`);
             }
 
+            // 等待文件保存完成
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             console.log('Articles saved successfully');
             return true;
         } catch (error) {
@@ -168,6 +173,22 @@ window.ArticlesManager = {
                 reader.onerror = () => reject(new Error('Failed to read file'));
                 reader.readAsDataURL(file);
             });
+
+            // Create papers directory if it doesn't exist
+            try {
+                const dirResponse = await fetch(`${window.GITHUB_API_URL}/contents/papers`, {
+                    headers: {
+                        'Authorization': `Bearer ${window.getGitHubToken()}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (!dirResponse.ok && dirResponse.status !== 404) {
+                    throw new Error('Failed to check papers directory');
+                }
+            } catch (error) {
+                console.log('Creating papers directory...');
+            }
 
             // Check if file exists
             let sha = '';
@@ -213,6 +234,9 @@ window.ArticlesManager = {
                 const errorData = await response.json();
                 throw new Error(`Failed to upload PDF: ${errorData.message}`);
             }
+
+            // 等待文件上传完成
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             console.log('PDF uploaded successfully');
             // Generate the raw URL for the PDF
