@@ -606,76 +606,59 @@ async function getArticlesFromStorage() {
             }
         });
 
-        // If file doesn't exist, return empty array
         if (response.status === 404) {
             console.log('No articles file found, creating new array');
             return [];
         }
 
-        // Handle other errors
         if (!response.ok) {
             console.error('Failed to fetch articles:', response.status, response.statusText);
             return [];
         }
 
-        try {
-            // Get the file content
-            const data = await response.json();
-            console.log('Raw GitHub response:', data);
+        const data = await response.json();
+        console.log('Raw GitHub response:', data);
 
-            // Decode base64 content
+        try {
             const content = atob(data.content);
             console.log('Decoded content:', content);
+            
+            const articles = JSON.parse(content);
+            console.log('Parsed articles:', articles);
 
-            // Parse JSON content
-            let articles;
-            try {
-                articles = JSON.parse(content);
-                console.log('Parsed articles data:', articles);
-            } catch (parseError) {
-                console.error('Error parsing JSON:', parseError);
-                return [];
-            }
-
-            // Ensure we have an array
             if (!Array.isArray(articles)) {
-                console.warn('Articles data is not an array, creating new array');
+                console.warn('Articles is not an array, returning empty array');
                 return [];
             }
 
-            // Validate array items
-            articles = articles.filter(article => {
-                return article && typeof article === 'object';
-            });
-
-            console.log('Final articles array:', articles);
             return articles;
-
         } catch (error) {
-            console.error('Error processing response:', error);
+            console.error('Error parsing articles:', error);
             return [];
         }
     } catch (error) {
-        console.error('Error in getArticlesFromStorage:', error);
+        console.error('Error fetching articles:', error);
         return [];
     }
 }
 
 async function saveArticlesToStorage(articles) {
     try {
-        // Ensure we have an array
-        const articlesArray = Array.isArray(articles) ? articles : [];
-        console.log('Saving articles:', articlesArray);
+        if (!Array.isArray(articles)) {
+            console.error('Articles is not an array');
+            return false;
+        }
 
-        // Convert to JSON string with pretty printing
-        const jsonContent = JSON.stringify(articlesArray, null, 2);
-        console.log('JSON content:', jsonContent);
+        console.log('Saving articles:', articles);
+
+        // Convert to JSON string
+        const jsonContent = JSON.stringify(articles, null, 2);
+        console.log('JSON content to save:', jsonContent);
 
         // Convert to base64
         const base64Content = btoa(unescape(encodeURIComponent(jsonContent)));
-        console.log('Base64 content length:', base64Content.length);
 
-        // Get existing file SHA if it exists
+        // Get existing file SHA
         let sha = '';
         try {
             const checkResponse = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
@@ -718,17 +701,90 @@ async function saveArticlesToStorage(articles) {
 
         if (!response.ok) {
             const errorData = await response.json();
+            console.error('GitHub API Error:', errorData);
             throw new Error(`GitHub API Error: ${errorData.message}`);
         }
 
         const responseData = await response.json();
         console.log('Save successful:', responseData);
+
+        // Update the UI
+        await renderArticlesList();
         return true;
     } catch (error) {
-        console.error('Error in saveArticlesToStorage:', error);
+        console.error('Error saving articles:', error);
         throw error;
     }
 }
+
+// Render articles list
+async function renderArticlesList() {
+    try {
+        const articles = await getArticlesFromStorage();
+        console.log('Rendering articles:', articles);
+
+        const articlesList = document.getElementById('articles-list');
+        if (!articlesList) {
+            console.error('Articles list element not found');
+            return;
+        }
+
+        if (!Array.isArray(articles) || articles.length === 0) {
+            articlesList.innerHTML = '<p class="text-gray-500">No articles found.</p>';
+            return;
+        }
+
+        articlesList.innerHTML = articles.map(article => `
+            <div class="bg-white rounded-lg shadow-md p-6 mb-4">
+                <h3 class="text-xl font-bold mb-2">${article.title}</h3>
+                <p class="text-gray-600 mb-2">Authors: ${article.authors}</p>
+                <p class="text-gray-600 mb-2">Date: ${article.date}</p>
+                ${article.categories && article.categories.length > 0 ? 
+                    `<p class="text-gray-600 mb-2">Categories: ${article.categories.join(', ')}</p>` : ''}
+                <p class="text-gray-700 mb-4">${article.abstract}</p>
+                <div class="flex justify-between items-center">
+                    <a href="${article.pdfUrl}" target="_blank" 
+                        class="text-blue-600 hover:text-blue-800">
+                        View PDF
+                    </a>
+                    <button onclick="deleteArticle(${article.id})" 
+                        class="text-red-600 hover:text-red-800">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error rendering articles:', error);
+        const articlesList = document.getElementById('articles-list');
+        if (articlesList) {
+            articlesList.innerHTML = '<p class="text-red-500">Error loading articles.</p>';
+        }
+    }
+}
+
+// Delete article function
+async function deleteArticle(id) {
+    if (!confirm('Are you sure you want to delete this article?')) {
+        return;
+    }
+
+    try {
+        let articles = await getArticlesFromStorage();
+        articles = articles.filter(article => article.id !== id);
+        await saveArticlesToStorage(articles);
+        await renderArticlesList();
+    } catch (error) {
+        console.error('Error deleting article:', error);
+        alert('Error deleting article: ' + error.message);
+    }
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Initializing admin page...');
+    await renderArticlesList();
+});
 
 // 将函数添加到全局作用域
 window.readExcelFile = readExcelFile;
