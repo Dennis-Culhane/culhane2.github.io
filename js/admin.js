@@ -255,6 +255,7 @@ async function handleBulkUpload(event) {
     bulkUploadBtn.textContent = 'Processing...';
 
     try {
+        // Read Excel file
         const data = await readExcelFile(excelFile);
         console.log('Excel data:', data);
 
@@ -299,30 +300,49 @@ async function handleBulkUpload(event) {
                 let articles = await getArticlesFromStorage();
                 console.log('Current articles:', articles);
 
-                // Ensure articles is an array
-                articles = Array.isArray(articles) ? articles : [];
+                // Double check we have an array
+                if (!Array.isArray(articles)) {
+                    console.warn('Articles is not an array, initializing empty array');
+                    articles = [];
+                }
 
                 // Get current max ID
                 const maxId = articles.length > 0 
                     ? Math.max(...articles.map(a => parseInt(a.id) || 0)) 
                     : 0;
+                console.log('Current max ID:', maxId);
 
                 // Process new articles
-                const newArticles = data.map((row, index) => ({
-                    id: maxId + index + 1,
-                    title: String(row.Title || '').trim(),
-                    authors: String(row.Authors || '').trim(),
-                    date: String(row.Date || '').trim(),
-                    categories: row.Categories 
-                        ? String(row.Categories).split(',').map(c => c.trim())
-                        : [],
-                    abstract: String(row.Abstract || '').trim(),
-                    fileName: String(row['PDF URL'] || '').split('/').pop(),
-                    pdfUrl: String(row['PDF URL'] || '').trim()
-                }));
+                const newArticles = data.map((row, index) => {
+                    // Validate required fields
+                    const requiredFields = ['Title', 'Authors', 'Date', 'Abstract', 'PDF URL'];
+                    const missingFields = requiredFields.filter(field => !row[field]);
+                    
+                    if (missingFields.length > 0) {
+                        throw new Error(`Row ${index + 1} is missing required fields: ${missingFields.join(', ')}`);
+                    }
 
-                // Combine and save
+                    return {
+                        id: maxId + index + 1,
+                        title: String(row.Title || '').trim(),
+                        authors: String(row.Authors || '').trim(),
+                        date: String(row.Date || '').trim(),
+                        categories: row.Categories 
+                            ? String(row.Categories).split(',').map(c => c.trim())
+                            : [],
+                        abstract: String(row.Abstract || '').trim(),
+                        fileName: String(row['PDF URL'] || '').split('/').pop(),
+                        pdfUrl: String(row['PDF URL'] || '').trim()
+                    };
+                });
+
+                console.log('New articles to add:', newArticles);
+
+                // Combine arrays
                 const updatedArticles = [...articles, ...newArticles];
+                console.log('Updated articles array:', updatedArticles);
+
+                // Save to storage
                 await saveArticlesToStorage(updatedArticles);
 
                 // Clean up
@@ -586,35 +606,53 @@ async function getArticlesFromStorage() {
             }
         });
 
+        // If file doesn't exist, return empty array
         if (response.status === 404) {
-            console.log('No articles file found, returning empty array');
+            console.log('No articles file found, creating new array');
             return [];
         }
 
+        // Handle other errors
         if (!response.ok) {
             console.error('Failed to fetch articles:', response.status, response.statusText);
             return [];
         }
 
-        const data = await response.json();
-        console.log('Raw GitHub response:', data);
-
-        // Decode base64 content
-        const content = atob(data.content);
-        console.log('Decoded content:', content);
-
         try {
+            // Get the file content
+            const data = await response.json();
+            console.log('Raw GitHub response:', data);
+
+            // Decode base64 content
+            const content = atob(data.content);
+            console.log('Decoded content:', content);
+
             // Parse JSON content
-            const parsedData = JSON.parse(content);
-            console.log('Parsed data:', parsedData);
+            let articles;
+            try {
+                articles = JSON.parse(content);
+                console.log('Parsed articles data:', articles);
+            } catch (parseError) {
+                console.error('Error parsing JSON:', parseError);
+                return [];
+            }
 
             // Ensure we have an array
-            const articles = Array.isArray(parsedData) ? parsedData : [];
-            console.log('Final articles array:', articles);
+            if (!Array.isArray(articles)) {
+                console.warn('Articles data is not an array, creating new array');
+                return [];
+            }
 
+            // Validate array items
+            articles = articles.filter(article => {
+                return article && typeof article === 'object';
+            });
+
+            console.log('Final articles array:', articles);
             return articles;
-        } catch (parseError) {
-            console.error('Error parsing JSON:', parseError);
+
+        } catch (error) {
+            console.error('Error processing response:', error);
             return [];
         }
     } catch (error) {
