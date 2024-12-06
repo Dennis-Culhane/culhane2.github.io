@@ -93,23 +93,52 @@ window.adminFunctions = {
     // ... 其他函数保持不变
 };
 
-// 修改文件上传函数
+// 文件上传处理函数
 async function uploadFileToGitHub(file, fileName) {
     try {
+        console.log('Starting file upload...', fileName);
+        
         // 将文件转换为 Base64
         const base64Content = await new Promise((resolve) => {
             const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.onloadend = () => {
+                const base64 = reader.result.split(',')[1];
+                console.log('File converted to base64');
+                resolve(base64);
+            };
             reader.readAsDataURL(file);
         });
 
-        console.log('Starting file upload...');
-        
-        // GitHub API 配置
-        const apiUrl = `https://api.github.com/repos/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}/contents/papers/${fileName}`;
-        
+        const apiUrl = `${GITHUB_API_URL}/contents/papers/${fileName}`;
         console.log('Uploading to:', apiUrl);
-        
+
+        // 检查文件是否已存在
+        let sha;
+        try {
+            const checkResponse = await fetch(apiUrl, {
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            if (checkResponse.ok) {
+                const data = await checkResponse.json();
+                sha = data.sha;
+            }
+        } catch (error) {
+            console.log('No existing file found');
+        }
+
+        const body = {
+            message: `Upload paper: ${fileName}`,
+            content: base64Content,
+            branch: GITHUB_CONFIG.BRANCH
+        };
+
+        if (sha) {
+            body.sha = sha;
+        }
+
         const response = await fetch(apiUrl, {
             method: 'PUT',
             headers: {
@@ -117,31 +146,30 @@ async function uploadFileToGitHub(file, fileName) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/vnd.github.v3+json'
             },
-            body: JSON.stringify({
-                message: `Upload paper: ${fileName}`,
-                content: base64Content,
-                branch: GITHUB_CONFIG.BRANCH
-            })
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('GitHub API Error:', errorData);
             throw new Error(`Failed to upload file: ${errorData.message}`);
         }
 
-        console.log('File uploaded successfully');
-        return `${GITHUB_REPO_URL}/papers/${fileName}`;
+        const responseData = await response.json();
+        console.log('File uploaded successfully:', responseData);
+        
+        return `${GITHUB_RAW_URL}/papers/${fileName}`;
     } catch (error) {
         console.error('Error uploading file:', error);
         throw error;
     }
 }
 
-// 修改 handleArticleSubmit 函数
-window.handleArticleSubmit = async function(formData) {
+// 单个文章提交处理
+async function handleArticleSubmit(event) {
+    event.preventDefault(); // 阻止表单默认提交行为
+    
     try {
-        // 验证表单数据
+        // 获取表单数据
         const title = document.getElementById('title').value;
         const authors = document.getElementById('authors').value;
         const date = document.getElementById('date').value;
@@ -152,77 +180,142 @@ window.handleArticleSubmit = async function(formData) {
             throw new Error('Please fill in all required fields');
         }
 
-        console.log('Starting file upload to GitHub...');
-        // 先上传文件到 GitHub
-        const fileUrl = await uploadFileToGitHub(pdfFile, pdfFile.name);
-        console.log('File uploaded successfully, URL:', fileUrl);
+        // 显示加载状态
+        const submitButton = document.querySelector('#article-form button[type="button"]');
+        const originalText = submitButton.textContent;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Uploading...';
 
-        // 创建文章对象
-        const newArticle = {
-            id: Date.now(), // 使用时间戳作为唯一ID
-            title: title,
-            authors: authors,
-            date: date,
-            categories: Array.from(window.selectedCategories || []),
-            abstract: abstract,
-            fileName: pdfFile.name,
-            pdfUrl: fileUrl  // 使用上传后返回的 URL
-        };
+        try {
+            // 上传PDF文件
+            console.log('Uploading PDF file...');
+            const pdfUrl = await uploadFileToGitHub(pdfFile, pdfFile.name);
+            console.log('PDF uploaded successfully:', pdfUrl);
 
-        // 获取现有文章
-        const articles = window.getArticlesFromStorage() || [];
-        
-        // 添加新文章
-        articles.push(newArticle);
-        
-        // 保存到 localStorage
-        window.saveArticlesToStorage(articles);
-        
-        console.log('Article saved successfully:', newArticle);
-        console.log('Current articles:', articles);
+            // 获取现有文章
+            const articles = await window.getArticlesFromStorage() || [];
+            const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
 
-        // 重新渲染文章列表
-        renderArticlesList();
-        renderExistingCategories();
-        
-        // 重置表单
-        document.getElementById('article-form').reset();
-        window.selectedCategories = new Set();
-        renderSelectedCategories();
-        
-        alert('Article added successfully!');
-        return newArticle;
+            // 创建新文章对象
+            const newArticle = {
+                id: maxId + 1,
+                title: title,
+                authors: authors,
+                date: date,
+                categories: Array.from(window.selectedCategories || []),
+                abstract: abstract,
+                fileName: pdfFile.name,
+                pdfUrl: pdfUrl
+            };
+
+            // 添加新文章并保存
+            articles.push(newArticle);
+            await window.saveArticlesToStorage(articles);
+
+            // 重置表单和更新界面
+            document.getElementById('article-form').reset();
+            window.selectedCategories = new Set();
+            await window.renderArticlesList();
+            await window.renderExistingCategories();
+            window.renderSelectedCategories();
+
+            alert('Article added successfully!');
+        } finally {
+            // 恢复按钮状态
+            submitButton.disabled = false;
+            submitButton.textContent = originalText;
+        }
     } catch (error) {
         console.error('Error saving article:', error);
         alert('Error saving article: ' + error.message);
-        throw error;
-    }
-};
-
-// 修改 saveArticle 函数
-async function saveArticle(article) {
-    try {
-        const articles = await window.getArticlesFromStorage();
-        const newId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) + 1 : 1;
-        
-        const newArticle = {
-            ...article,
-            id: newId
-        };
-        
-        articles.push(newArticle);
-        await window.saveArticlesToStorage(articles);
-        
-        // 立即重新渲染
-        await renderArticlesList();
-        renderExistingCategories();
-        
-        return newArticle;
-    } catch (error) {
-        console.error('Error in saveArticle:', error);
-        throw error;
     }
 }
+
+// 批量上传处理
+async function handleBulkUpload(event) {
+    event.preventDefault();
+    
+    const excelFile = document.getElementById('excel-file').files[0];
+    if (!excelFile) {
+        alert('Please select an Excel file');
+        return;
+    }
+
+    const bulkUploadBtn = document.getElementById('batch-upload-btn');
+    const originalText = bulkUploadBtn.textContent;
+    bulkUploadBtn.disabled = true;
+    bulkUploadBtn.textContent = 'Processing...';
+
+    try {
+        const data = await readExcelFile(excelFile);
+        console.log('Excel data:', data);
+
+        // 显示预览
+        const previewArea = document.getElementById('preview-area');
+        previewArea.classList.remove('hidden');
+        previewArea.innerHTML = `
+            <h3 class="text-lg font-medium mb-4">Preview Data</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Authors</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        ${data.map(row => `
+                            <tr>
+                                <td class="px-6 py-4 text-sm">${row.Title || ''}</td>
+                                <td class="px-6 py-4 text-sm">${row.Authors || ''}</td>
+                                <td class="px-6 py-4 text-sm">${row.Date || ''}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <button id="confirm-batch-upload" class="mt-4 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                Confirm Upload
+            </button>
+        `;
+
+        // 添加确认按钮事件处理
+        document.getElementById('confirm-batch-upload').onclick = async () => {
+            try {
+                await confirmBatchUpload(data);
+                previewArea.classList.add('hidden');
+                document.getElementById('excel-file').value = '';
+                alert('Batch upload completed successfully!');
+            } catch (error) {
+                console.error('Batch upload error:', error);
+                alert('Batch upload failed: ' + error.message);
+            }
+        };
+    } catch (error) {
+        console.error('Error in bulk upload:', error);
+        alert('Batch upload failed: ' + error.message);
+    } finally {
+        bulkUploadBtn.disabled = false;
+        bulkUploadBtn.textContent = originalText;
+    }
+}
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing admin page...');
+    
+    // 初始化全局变量
+    window.selectedCategories = new Set();
+    window.selectedArticles = new Set();
+    window.isSelectMode = false;
+
+    // Add functions to global scope
+    window.readExcelFile = readExcelFile;
+    window.confirmBatchUpload = confirmBatchUpload;
+    window.getArticlesFromStorage = getArticlesFromStorage;
+    window.saveArticlesToStorage = saveArticlesToStorage;
+});
 
 // 添加 renderArticlesList 函数
 function renderArticlesList() {
@@ -330,3 +423,169 @@ function renderSelectedCategories() {
         </span>
     `).join('');
 }
+
+// Excel文件处理函数
+async function readExcelFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = e.target.result;
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                console.log('Excel data parsed:', jsonData);
+                resolve(jsonData);
+            } catch (error) {
+                console.error('Error parsing Excel:', error);
+                reject(new Error('Failed to parse Excel file: ' + error.message));
+            }
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsBinaryString(file);
+    });
+}
+
+// 批量上传确认处理
+async function confirmBatchUpload(data) {
+    try {
+        // 获取现有文章
+        const articles = await window.getArticlesFromStorage() || [];
+        const maxId = articles.length > 0 ? Math.max(...articles.map(a => a.id || 0)) : 0;
+
+        // 转换数据格式
+        const newArticles = await Promise.all(data.map(async (row, index) => {
+            // 验证必需字段
+            if (!row.Title || !row.Authors || !row.Date || !row.Abstract || !row['PDF URL']) {
+                throw new Error(`Row ${index + 1} is incomplete. Please check all required fields`);
+            }
+
+            return {
+                id: maxId + index + 1,
+                title: row.Title,
+                authors: row.Authors,
+                date: row.Date,
+                categories: row.Categories ? row.Categories.split(',').map(c => c.trim()) : [],
+                abstract: row.Abstract,
+                fileName: row['PDF URL'].split('/').pop(),
+                pdfUrl: row['PDF URL']
+            };
+        }));
+
+        // 添加新文章
+        const updatedArticles = [...articles, ...newArticles];
+        
+        // 保存更新后的文章列表
+        await window.saveArticlesToStorage(updatedArticles);
+        
+        // 更新界面
+        await window.renderArticlesList();
+        if (typeof window.renderExistingCategories === 'function') {
+            await window.renderExistingCategories();
+        }
+
+        console.log('Batch upload completed successfully');
+        return true;
+    } catch (error) {
+        console.error('Error in confirmBatchUpload:', error);
+        throw error;
+    }
+}
+
+// 文章存储相关函数
+async function getArticlesFromStorage() {
+    try {
+        console.log('Fetching articles from GitHub...');
+        const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
+            headers: {
+                'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.status === 404) {
+            console.log('No articles file found, returning empty array');
+            return [];
+        }
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch articles');
+        }
+
+        const data = await response.json();
+        const content = atob(data.content);
+        const articles = JSON.parse(content);
+        console.log('Articles fetched successfully:', articles.length);
+        return articles;
+    } catch (error) {
+        console.error('Error fetching articles:', error);
+        return [];
+    }
+}
+
+async function saveArticlesToStorage(articles) {
+    try {
+        console.log('Saving articles to GitHub...');
+        
+        // 使用 UTF-8 编码
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(articles, null, 2))));
+        
+        // 获取现有文件的 SHA
+        let sha = '';
+        try {
+            const getResponse = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
+                headers: {
+                    'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (getResponse.ok) {
+                const data = await getResponse.json();
+                sha = data.sha;
+            }
+        } catch (error) {
+            console.log('No existing file found');
+        }
+
+        // 准备请求体
+        const body = {
+            message: 'Update articles data',
+            content: content,
+            branch: GITHUB_CONFIG.BRANCH
+        };
+
+        if (sha) {
+            body.sha = sha;
+        }
+
+        // 发送保存请求
+        const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`GitHub API Error: ${errorData.message}`);
+        }
+
+        console.log('Articles saved successfully');
+        return true;
+    } catch (error) {
+        console.error('Error saving articles:', error);
+        throw error;
+    }
+}
+
+// 将函数添加到全局作用域
+window.readExcelFile = readExcelFile;
+window.confirmBatchUpload = confirmBatchUpload;
+window.getArticlesFromStorage = getArticlesFromStorage;
+window.saveArticlesToStorage = saveArticlesToStorage;
