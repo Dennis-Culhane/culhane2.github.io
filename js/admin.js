@@ -93,12 +93,24 @@ window.adminFunctions = {
     // ... 其他函数保持不变
 };
 
-// 文件上传处理函数
+// Helper function to get headers with token
+function getAuthHeaders() {
+    const token = window.getGitHubToken();
+    if (!token) {
+        throw new Error('GitHub token not found. Please authenticate first.');
+    }
+    return {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github.v3+json'
+    };
+}
+
+// File upload handler
 async function uploadFileToGitHub(file, fileName) {
     try {
         console.log('Starting file upload...', fileName);
         
-        // 将文件转换为 Base64
+        // Convert file to Base64
         const base64Content = await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -109,17 +121,14 @@ async function uploadFileToGitHub(file, fileName) {
             reader.readAsDataURL(file);
         });
 
-        const apiUrl = `${GITHUB_API_URL}/contents/papers/${fileName}`;
+        const apiUrl = `${window.GITHUB_API_URL}/contents/papers/${fileName}`;
         console.log('Uploading to:', apiUrl);
 
-        // 检查文件是否已存在
+        // Check if file exists
         let sha;
         try {
             const checkResponse = await fetch(apiUrl, {
-                headers: {
-                    'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
+                headers: getAuthHeaders()
             });
             if (checkResponse.ok) {
                 const data = await checkResponse.json();
@@ -132,7 +141,7 @@ async function uploadFileToGitHub(file, fileName) {
         const body = {
             message: `Upload paper: ${fileName}`,
             content: base64Content,
-            branch: GITHUB_CONFIG.BRANCH
+            branch: window.GITHUB_CONFIG.BRANCH
         };
 
         if (sha) {
@@ -142,9 +151,8 @@ async function uploadFileToGitHub(file, fileName) {
         const response = await fetch(apiUrl, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github.v3+json'
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(body)
         });
@@ -157,7 +165,7 @@ async function uploadFileToGitHub(file, fileName) {
         const responseData = await response.json();
         console.log('File uploaded successfully:', responseData);
         
-        return `${GITHUB_RAW_URL}/papers/${fileName}`;
+        return `${window.GITHUB_RAW_URL}/papers/${fileName}`;
     } catch (error) {
         console.error('Error uploading file:', error);
         throw error;
@@ -493,15 +501,12 @@ async function confirmBatchUpload(data) {
     }
 }
 
-// 文章存储相关函数
+// Storage Functions
 async function getArticlesFromStorage() {
     try {
         console.log('Fetching articles from GitHub...');
-        const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
-            headers: {
-                'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
+        const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
+            headers: getAuthHeaders()
         });
 
         if (response.status === 404) {
@@ -528,17 +533,14 @@ async function saveArticlesToStorage(articles) {
     try {
         console.log('Saving articles to GitHub...');
         
-        // 使用 UTF-8 编码
+        // Use UTF-8 encoding
         const content = btoa(unescape(encodeURIComponent(JSON.stringify(articles, null, 2))));
         
-        // 获取现有文件的 SHA
+        // Get existing file SHA
         let sha = '';
         try {
-            const getResponse = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
-                headers: {
-                    'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
+            const getResponse = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
+                headers: getAuthHeaders()
             });
             
             if (getResponse.ok) {
@@ -549,24 +551,23 @@ async function saveArticlesToStorage(articles) {
             console.log('No existing file found');
         }
 
-        // 准备请求体
+        // Prepare request body
         const body = {
             message: 'Update articles data',
             content: content,
-            branch: GITHUB_CONFIG.BRANCH
+            branch: window.GITHUB_CONFIG.BRANCH
         };
 
         if (sha) {
             body.sha = sha;
         }
 
-        // 发送保存请求
-        const response = await fetch(`${GITHUB_API_URL}/contents/data/articles.json`, {
+        // Send save request
+        const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${GITHUB_CONFIG.TOKEN}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github.v3+json'
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(body)
         });
@@ -589,3 +590,15 @@ window.readExcelFile = readExcelFile;
 window.confirmBatchUpload = confirmBatchUpload;
 window.getArticlesFromStorage = getArticlesFromStorage;
 window.saveArticlesToStorage = saveArticlesToStorage;
+
+// GitHub Configuration
+const GITHUB_CONFIG = {
+    TOKEN: process.env.GITHUB_TOKEN || window.GITHUB_CONFIG?.TOKEN,
+    REPO_OWNER: 'Dennis-Culhane',
+    REPO_NAME: 'culhane2.github.io',
+    BRANCH: 'main'
+};
+
+// GitHub API URLs
+const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}`;
+const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_CONFIG.REPO_OWNER}/${GITHUB_CONFIG.REPO_NAME}/${GITHUB_CONFIG.BRANCH}`;

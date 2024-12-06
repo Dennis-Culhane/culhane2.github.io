@@ -6,82 +6,134 @@
     <title>Article Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-    <!-- Load configuration before other scripts -->
     <script src="js/config.js"></script>
     <script src="js/admin.js" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen p-8">
     <div class="max-w-4xl mx-auto space-y-8">
-        <!-- Single Article Upload -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-bold mb-6">Add Article</h2>
-            <form id="article-form" class="space-y-6" onsubmit="return false;">
+        <!-- GitHub Token Input -->
+        <div id="token-input-section" class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold mb-6">GitHub Authentication</h2>
+            <div class="space-y-4">
                 <div>
-                    <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
-                    <input type="text" id="title" name="title" required
-                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <label for="github-token" class="block text-sm font-medium text-gray-700">GitHub Personal Access Token</label>
+                    <input type="password" id="github-token" 
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="ghp_xxxxxxxxxxxxxxxx">
                 </div>
-
                 <div>
-                    <label for="authors" class="block text-sm font-medium text-gray-700">Authors</label>
-                    <input type="text" id="authors" name="authors" required
-                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-
-                <div>
-                    <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-                    <input type="date" id="date" name="date" required
-                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-
-                <div>
-                    <label for="abstract" class="block text-sm font-medium text-gray-700">Abstract</label>
-                    <textarea id="abstract" name="abstract" rows="4" required
-                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
-                </div>
-
-                <div>
-                    <label for="pdf-file" class="block text-sm font-medium text-gray-700">PDF File</label>
-                    <input type="file" id="pdf-file" name="pdf-file" accept=".pdf" required
-                        class="mt-1 block w-full py-2 px-3">
-                </div>
-
-                <div>
-                    <button type="button" onclick="handleArticleSubmit(event)"
+                    <button onclick="handleTokenSubmit()" type="button"
                         class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Add Article
+                        Save Token
                     </button>
                 </div>
-            </form>
-        </div>
-
-        <!-- Batch Upload -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-bold mb-6">Batch Upload</h2>
-            <div class="space-y-6">
-                <div>
-                    <label for="excel-file" class="block text-sm font-medium text-gray-700">Excel File</label>
-                    <input type="file" id="excel-file" accept=".xlsx, .xls"
-                        class="mt-1 block w-full py-2 px-3">
-                </div>
-
-                <div>
-                    <button type="button" id="batch-upload-btn" onclick="handleBulkUpload(event)"
-                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        Upload Batch
-                    </button>
-                </div>
-
-                <div id="preview-area" class="mt-4 hidden">
-                    <!-- Preview content will be displayed here -->
-                </div>
+                <p class="text-sm text-gray-500">
+                    Token is stored in session storage and will be cleared when you close the browser.
+                    <br>Required scopes: repo, workflow
+                </p>
             </div>
         </div>
 
-        <!-- Articles List -->
-        <div id="articles-list" class="space-y-4">
-            <!-- Articles will be displayed here -->
+        <!-- Main Content (hidden until token is set) -->
+        <div id="main-content" class="hidden space-y-8">
+            <!-- Single Article Upload -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-6">Add Article</h2>
+                <form id="article-form" class="space-y-6" onsubmit="return false;">
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" id="title" name="title" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="authors" class="block text-sm font-medium text-gray-700">Authors</label>
+                        <input type="text" id="authors" name="authors" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" id="date" name="date" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="abstract" class="block text-sm font-medium text-gray-700">Abstract</label>
+                        <textarea id="abstract" name="abstract" rows="4" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label for="pdf-file" class="block text-sm font-medium text-gray-700">PDF File</label>
+                        <input type="file" id="pdf-file" name="pdf-file" accept=".pdf" required
+                            class="mt-1 block w-full py-2 px-3">
+                    </div>
+
+                    <div>
+                        <button type="button" onclick="handleArticleSubmit(event)"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Add Article
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Batch Upload -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-6">Batch Upload</h2>
+                <div class="space-y-6">
+                    <div>
+                        <label for="excel-file" class="block text-sm font-medium text-gray-700">Excel File</label>
+                        <input type="file" id="excel-file" accept=".xlsx, .xls"
+                            class="mt-1 block w-full py-2 px-3">
+                    </div>
+
+                    <div>
+                        <button type="button" id="batch-upload-btn" onclick="handleBulkUpload(event)"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Upload Batch
+                        </button>
+                    </div>
+
+                    <div id="preview-area" class="mt-4 hidden">
+                        <!-- Preview content will be displayed here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Articles List -->
+            <div id="articles-list" class="space-y-4">
+                <!-- Articles will be displayed here -->
+            </div>
         </div>
     </div>
+
+    <script>
+        // Token handling
+        function handleTokenSubmit() {
+            const token = document.getElementById('github-token').value;
+            if (!token) {
+                alert('Please enter a GitHub token');
+                return;
+            }
+            
+            // Save token
+            window.setGitHubToken(token);
+            
+            // Hide token input and show main content
+            document.getElementById('token-input-section').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+        }
+
+        // Check for existing token on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = window.getGitHubToken();
+            if (token) {
+                document.getElementById('token-input-section').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+            }
+        });
+    </script>
 </body>
 </html> 
