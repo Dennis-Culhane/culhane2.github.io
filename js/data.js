@@ -210,10 +210,14 @@ window.ArticlesManager = {
                 articles = [];
             }
             
-            // Get max ID
-            const maxId = articles.length > 0 
-                ? Math.max(...articles.map(a => parseInt(a.id) || 0)) 
-                : 0;
+            // Get max ID - 修复这里的逻辑
+            let maxId = 0;
+            if (articles.length > 0) {
+                maxId = articles.reduce((max, article) => {
+                    const id = parseInt(article.id) || 0;
+                    return id > max ? id : max;
+                }, 0);
+            }
 
             // Create new article
             const newArticle = {
