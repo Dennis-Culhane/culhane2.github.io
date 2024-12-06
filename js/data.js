@@ -12,7 +12,9 @@ window.ArticlesManager = {
             });
 
             if (response.status === 404) {
-                console.log('No articles file found');
+                console.log('No articles file found, creating new file');
+                // Create empty articles file
+                await this.saveArticles([]);
                 return [];
             }
 
@@ -45,9 +47,14 @@ window.ArticlesManager = {
 
         console.log('Saving articles:', articles);
 
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(articles, null, 2))));
+        // Convert to JSON string with pretty printing
+        const jsonContent = JSON.stringify(articles, null, 2);
+        console.log('JSON content to save:', jsonContent);
 
-        // Get existing file SHA
+        // Convert to base64
+        const base64Content = btoa(unescape(encodeURIComponent(jsonContent)));
+
+        // Get existing file SHA if it exists
         let sha = '';
         try {
             const checkResponse = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
@@ -60,15 +67,16 @@ window.ArticlesManager = {
             if (checkResponse.ok) {
                 const data = await checkResponse.json();
                 sha = data.sha;
+                console.log('Existing file SHA:', sha);
             }
         } catch (error) {
             console.log('No existing file found');
         }
 
-        // Prepare request
+        // Prepare request body
         const body = {
             message: 'Update articles data',
-            content: content,
+            content: base64Content,
             branch: window.GITHUB_CONFIG.BRANCH
         };
 
@@ -77,6 +85,7 @@ window.ArticlesManager = {
         }
 
         // Save to GitHub
+        console.log('Sending request to GitHub...');
         const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
             method: 'PUT',
             headers: {
@@ -92,10 +101,118 @@ window.ArticlesManager = {
             throw new Error(`GitHub API Error: ${errorData.message}`);
         }
 
+        console.log('Articles saved successfully');
         return true;
     },
 
-    // Render articles list (shared between admin and index pages)
+    // Upload PDF file to GitHub
+    async uploadPDF(file) {
+        try {
+            console.log('Uploading PDF:', file.name);
+
+            // Convert file to base64
+            const base64Content = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Check if file exists
+            let sha = '';
+            try {
+                const checkResponse = await fetch(`${window.GITHUB_API_URL}/contents/papers/${file.name}`, {
+                    headers: {
+                        'Authorization': `Bearer ${window.getGitHubToken()}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (checkResponse.ok) {
+                    const data = await checkResponse.json();
+                    sha = data.sha;
+                }
+            } catch (error) {
+                console.log('No existing file found');
+            }
+
+            // Prepare request body
+            const body = {
+                message: `Upload PDF: ${file.name}`,
+                content: base64Content,
+                branch: window.GITHUB_CONFIG.BRANCH
+            };
+
+            if (sha) {
+                body.sha = sha;
+            }
+
+            // Upload to GitHub
+            const response = await fetch(`${window.GITHUB_API_URL}/contents/papers/${file.name}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${window.getGitHubToken()}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Failed to upload PDF: ${errorData.message}`);
+            }
+
+            console.log('PDF uploaded successfully');
+            return `${window.GITHUB_RAW_URL}/papers/${file.name}`;
+        } catch (error) {
+            console.error('Error uploading PDF:', error);
+            throw error;
+        }
+    },
+
+    // Add new article
+    async addArticle(articleData, pdfFile) {
+        try {
+            // Upload PDF first
+            const pdfUrl = await this.uploadPDF(pdfFile);
+            
+            // Get current articles
+            const articles = await this.getArticles();
+            
+            // Get max ID
+            const maxId = articles.length > 0 
+                ? Math.max(...articles.map(a => parseInt(a.id) || 0)) 
+                : 0;
+
+            // Create new article
+            const newArticle = {
+                id: maxId + 1,
+                title: articleData.title,
+                authors: articleData.authors,
+                date: articleData.date,
+                categories: articleData.categories || [],
+                abstract: articleData.abstract,
+                fileName: pdfFile.name,
+                pdfUrl: pdfUrl
+            };
+
+            // Add to articles array
+            articles.push(newArticle);
+
+            // Save updated articles
+            await this.saveArticles(articles);
+
+            return newArticle;
+        } catch (error) {
+            console.error('Error adding article:', error);
+            throw error;
+        }
+    },
+
+    // Render articles list
     async renderArticles(containerId, isAdmin = false) {
         try {
             const articles = await this.getArticles();
@@ -145,7 +262,7 @@ window.ArticlesManager = {
         }
     },
 
-    // Delete article (admin only)
+    // Delete article
     async deleteArticle(id) {
         if (!confirm('Are you sure you want to delete this article?')) {
             return;
