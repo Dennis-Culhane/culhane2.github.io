@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (await checkToken(token)) {
                 document.getElementById('token-input-section').classList.add('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
-                await ArticlesManager.renderArticlesList();
+                await ArticlesManager.renderArticles();
             } else {
                 sessionStorage.removeItem('github_token');
             }
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Shared data handling functions
-const ArticlesManager = {
+window.ArticlesManager = {
     // Get articles from GitHub storage
     async getArticles(includeContent = false) {
         try {
@@ -392,19 +392,16 @@ const ArticlesManager = {
     },
 
     // Render articles list
-    async renderArticlesList(containerId, isAdmin = false) {
+    async renderArticles(containerId = 'articles-list', isAdmin = false) {
         try {
-            if (!containerId) {
-                throw new Error('Container ID is required');
-            }
-
             // 如果是管理页面，使用 token 获取数据
             let articles = await this.getArticles(isAdmin);
             console.log('Rendering articles:', articles);
 
             const container = document.getElementById(containerId);
             if (!container) {
-                throw new Error(`Container ${containerId} not found`);
+                console.warn(`Container ${containerId} not found`);
+                return;
             }
 
             if (!Array.isArray(articles) || articles.length === 0) {
@@ -501,7 +498,7 @@ document.getElementById('save-token-btn').addEventListener('click', async functi
             sessionStorage.setItem('github_token', token);
             document.getElementById('token-input-section').classList.add('hidden');
             document.getElementById('main-content').classList.remove('hidden');
-            await renderArticlesList();
+            await ArticlesManager.renderArticles();
         } else {
             alert('Invalid GitHub token. Please check your token and try again.');
         }
@@ -510,6 +507,3 @@ document.getElementById('save-token-btn').addEventListener('click', async functi
         alert('Failed to verify token. Please check your connection and try again.');
     }
 });
-
-// 导出到全局
-window.ArticlesManager = ArticlesManager;
