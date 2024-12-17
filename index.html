@@ -37,9 +37,17 @@
     
     <!-- 初始化脚本 -->
     <script defer>
-        window.addEventListener('DOMContentLoaded', function() {
-            if (typeof initializePage === 'function') {
-                initializePage().catch(console.error);
+        // 等待DOM加载完成后初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // 初始化页面
+                await ArticlesManager.renderArticles('articles-list', false);
+            } catch (error) {
+                console.error('Initialization error:', error);
+                const container = document.getElementById('articles-list');
+                if (container) {
+                    container.innerHTML = `<p class="text-red-500 text-center">Error loading articles: ${error.message}</p>`;
+                }
             }
         });
     </script>
