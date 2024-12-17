@@ -1,5 +1,5 @@
-// 等待DOM加载完成并初始化页面
-async function initializePage() {
+// 定义全局初始化函数
+window.initializePage = async function() {
     // 添加token保存按钮的事件监听器
     const saveTokenBtn = document.getElementById('save-token-btn');
     if (saveTokenBtn) {
@@ -147,13 +147,6 @@ async function initializePage() {
             sessionStorage.removeItem('github_token');
         }
     }
-}
-
-// 确保在DOM加载完成后再初始化
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializePage);
-} else {
-    initializePage();
 }
 
 // Shared data handling functions

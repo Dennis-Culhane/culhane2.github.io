@@ -5,9 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dennis P. Culhane - Academic Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <!-- Load configuration and shared code -->
     <script src="js/config.js"></script>
-    <script src="js/data.js"></script>
+    <script>
+        // 等待所有依赖加载完成
+        window.addEventListener('load', function() {
+            // 动态加载data.js
+            const script = document.createElement('script');
+            script.src = 'js/data.js';
+            script.onload = function() {
+                // data.js加载完成后初始化
+                if (typeof initializePage === 'function') {
+                    initializePage();
+                }
+            };
+            document.head.appendChild(script);
+        });
+    </script>
     <style>
         .article-card {
             background-color: white;
