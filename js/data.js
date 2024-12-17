@@ -240,8 +240,15 @@ window.ArticlesManager = {
                 throw new Error('Article title and authors are required');
             }
 
-            if (!articleData.pdfUrl) {
-                throw new Error('PDF URL is required');
+            if (!articleData.pdfUrl || !articleData.pdfUrl.trim()) {
+                throw new Error('URL is required');
+            }
+
+            // 验证URL格式
+            try {
+                new URL(articleData.pdfUrl);
+            } catch (e) {
+                throw new Error('Invalid URL format');
             }
 
             // Get current articles first
@@ -262,7 +269,7 @@ window.ArticlesManager = {
                 date: articleData.date || new Date().toISOString().split('T')[0],
                 categories: Array.isArray(articleData.categories) ? articleData.categories.filter(Boolean) : [],
                 abstract: articleData.abstract ? articleData.abstract.trim() : '',
-                pdfUrl: articleData.pdfUrl
+                pdfUrl: articleData.pdfUrl.trim()
             };
 
             console.log('New article object:', newArticle);
