@@ -326,6 +326,82 @@ window.ArticlesManager = {
         }
     },
 
+    // Delete article (需要 token)
+    async deleteArticle(id) {
+        try {
+            const token = window.getGitHubToken();
+            if (!token) {
+                throw new Error('GitHub token is not set');
+            }
+
+            if (!id) {
+                throw new Error('Article ID is required');
+            }
+
+            let articles = await this.getArticles(true);
+            if (!Array.isArray(articles)) {
+                articles = [];
+                return;
+            }
+
+            // Find the article to get its PDF filename
+            const article = articles.find(a => a.id === id);
+            if (!article) {
+                throw new Error('Article not found');
+            }
+
+            if (article.fileName) {
+                // Try to delete the PDF file
+                try {
+                    // Get the PDF file SHA
+                    const pdfResponse = await fetch(`${window.GITHUB_API_URL}/contents/papers/${encodeURIComponent(article.fileName)}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+
+                    if (pdfResponse.ok) {
+                        const pdfData = await pdfResponse.json();
+                        // Delete the PDF file
+                        const deleteResponse = await fetch(`${window.GITHUB_API_URL}/contents/papers/${encodeURIComponent(article.fileName)}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/vnd.github.v3+json'
+                            },
+                            body: JSON.stringify({
+                                message: `Delete PDF: ${article.fileName}`,
+                                sha: pdfData.sha,
+                                branch: window.GITHUB_CONFIG.BRANCH
+                            })
+                        });
+
+                        if (!deleteResponse.ok) {
+                            const errorData = await deleteResponse.json();
+                            console.error('Failed to delete PDF:', errorData);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error deleting PDF file:', error);
+                    // Continue with article deletion even if PDF deletion fails
+                }
+            }
+
+            // Remove the article from the array
+            articles = articles.filter(article => article.id !== id);
+
+            // Save the updated articles
+            await this.saveArticles(articles);
+            
+            return true;
+        } catch (error) {
+            console.error('Error deleting article:', error);
+            throw error;
+        }
+    },
+
     // Render articles list
     async renderArticles(containerId, isAdmin = false) {
         try {
@@ -389,105 +465,6 @@ window.ArticlesManager = {
             if (container) {
                 container.innerHTML = `<p class="text-red-500 text-center">Error loading articles: ${error.message}</p>`;
             }
-        }
-    },
-
-    // Delete article (需要 token)
-    async deleteArticle(id) {
-        try {
-            const token = window.getGitHubToken();
-            if (!token) {
-                throw new Error('GitHub token is not set');
-            }
-
-            if (!id) {
-                throw new Error('Article ID is required');
-            }
-
-            // 获取当前的文章数据
-            const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch articles data');
-            }
-
-            const data = await response.json();
-            const content = atob(data.content);
-            let articles = JSON.parse(content);
-
-            // 找到要删除的文章
-            const articleIndex = articles.findIndex(a => String(a.id) === String(id));
-            if (articleIndex === -1) {
-                throw new Error('Article not found');
-            }
-
-            const articleToDelete = articles[articleIndex];
-
-            // 如果有 PDF 文件，先删除它
-            if (articleToDelete.fileName) {
-                try {
-                    const pdfResponse = await fetch(`${window.GITHUB_API_URL}/contents/papers/${encodeURIComponent(articleToDelete.fileName)}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-
-                    if (pdfResponse.ok) {
-                        const pdfData = await pdfResponse.json();
-                        await fetch(`${window.GITHUB_API_URL}/contents/papers/${encodeURIComponent(articleToDelete.fileName)}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                message: `Delete PDF: ${articleToDelete.fileName}`,
-                                sha: pdfData.sha,
-                                branch: window.GITHUB_CONFIG.BRANCH
-                            })
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error deleting PDF file:', error);
-                    // 继续删除文章数据，即使 PDF 删除失败
-                }
-            }
-
-            // 从数组中删除文章
-            articles.splice(articleIndex, 1);
-
-            // 更新 articles.json 文件
-            const updatedContent = JSON.stringify(articles, null, 2);
-            const encodedContent = btoa(unescape(encodeURIComponent(updatedContent)));
-
-            const updateResponse = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: `Delete article: ${articleToDelete.title}`,
-                    content: encodedContent,
-                    sha: data.sha,
-                    branch: window.GITHUB_CONFIG.BRANCH
-                })
-            });
-
-            if (!updateResponse.ok) {
-                throw new Error('Failed to update articles data');
-            }
-
-            return true;
-        } catch (error) {
-            console.error('Error deleting article:', error);
-            throw error;
         }
     }
 };

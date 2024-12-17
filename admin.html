@@ -71,18 +71,48 @@
                         Save Token
                     </button>
                 </div>
-                <p class="text-sm text-gray-500">
-                    Token is stored in session storage and will be cleared when you close the browser.
-                    <br>Required scopes: repo, workflow
-                </p>
             </div>
         </div>
 
         <!-- Main Content (hidden until token is set) -->
         <div id="main-content" class="hidden space-y-8">
-            <!-- Single Article Upload -->
+            <!-- Add Article Form -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-6">批量上传文章</h2>
+                <div class="space-y-6">
+                    <div>
+                        <label for="excel-file" class="block text-sm font-medium text-gray-700">Excel文件 (.xlsx)</label>
+                        <input type="file" id="excel-file" accept=".xlsx" 
+                            class="mt-1 block w-full py-2 px-3">
+                        <p class="mt-2 text-sm text-gray-500">
+                            Excel文件应包含以下列：Title, Authors, Date, Categories (用逗号分隔), Abstract
+                        </p>
+                    </div>
+                    <div>
+                        <label for="pdf-files" class="block text-sm font-medium text-gray-700">PDF文件</label>
+                        <input type="file" id="pdf-files" accept=".pdf" multiple
+                            class="mt-1 block w-full py-2 px-3">
+                        <p class="mt-2 text-sm text-gray-500">
+                            PDF文件名应与Excel中的标题相对应
+                        </p>
+                    </div>
+                    <div>
+                        <button id="batch-upload-btn" type="button"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            开始上传
+                        </button>
+                    </div>
+                    <div id="upload-progress" class="hidden">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="progress-bar" class="bg-green-600 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="progress-text" class="text-sm text-gray-600 mt-2">准备上传...</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-bold mb-6">Add Article</h2>
+                <h2 class="text-2xl font-bold mb-6">Add New Article</h2>
                 <form id="article-form" class="space-y-6">
                     <div>
                         <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
@@ -146,7 +176,7 @@
                     </div>
                 </div>
                 
-                <!-- Articles List -->
+                <!-- Articles Grid -->
                 <div id="articles-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Articles will be displayed here -->
                 </div>
@@ -334,17 +364,20 @@
                 .trim();
         }
 
-        // 修改 ArticlesManager.renderArticles 方法的调用
+        // 修改 renderArticlesList 函数
         async function renderArticlesList() {
             const container = document.getElementById('articles-list');
-            const articles = await ArticlesManager.getArticles();
+            const articles = await ArticlesManager.getArticles(true); // 使用 true 来获取完整的文章数据
             
-            console.log('Fetched articles:', articles); // 调试所有文章数据
+            console.log('Fetched articles:', articles);
             
-            if (articles.length === 0) {
+            if (!articles || articles.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-center col-span-2">No articles found.</p>';
                 return;
             }
+
+            // 按日期排序（最新的在前）
+            articles.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             container.innerHTML = articles.map(article => {
                 if (!article.id) {
@@ -352,24 +385,16 @@
                     return '';
                 }
                 
-                // 确保 ID 是字符串类型
-                const articleId = String(article.id);
-                console.log('Rendering article:', {
-                    id: articleId,
-                    title: article.title,
-                    type: typeof articleId
-                });
-                
                 return `
                     <div class="article-card relative">
                         <div class="absolute top-4 left-4">
                             <input type="checkbox" 
                                    class="article-checkbox w-4 h-4 text-blue-600 rounded border-gray-300"
-                                   data-article-id="${articleId}">
+                                   data-article-id="${article.id}">
                         </div>
                         <div class="pl-8">
                             <h2 class="title-ellipsis cursor-pointer hover:text-blue-600" 
-                                onclick="openEditModal('${articleId}')"
+                                onclick="openEditModal('${article.id}')"
                                 title="Click to edit">
                                 ${cleanText(article.title)}
                             </h2>
@@ -377,11 +402,15 @@
                             <p class="categories-ellipsis">${article.categories ? article.categories.join(', ') : ''}</p>
                             <p class="abstract-clamp">${cleanText(article.abstract || '')}</p>
                             <div class="mt-4 flex space-x-2">
-                                <button onclick="openEditModal('${articleId}')" 
+                                <a href="${article.pdfUrl}" target="_blank" 
+                                   class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800">
+                                    View PDF
+                                </a>
+                                <button onclick="openEditModal('${article.id}')" 
                                         class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800">
                                     Edit
                                 </button>
-                                <button onclick="deleteArticle('${articleId}')" 
+                                <button onclick="deleteArticle('${article.id}')" 
                                         class="px-3 py-1 text-sm text-red-600 hover:text-red-800">
                                     Delete
                                 </button>
@@ -588,6 +617,117 @@
                 // setupBatchDeleteListeners 会在 renderArticlesList 中被调用
             }
         });
+
+        // 批量上传功能
+        document.getElementById('batch-upload-btn').addEventListener('click', async function() {
+            const excelFile = document.getElementById('excel-file').files[0];
+            const pdfFiles = document.getElementById('pdf-files').files;
+            
+            if (!excelFile) {
+                alert('请选择Excel文件');
+                return;
+            }
+            
+            if (pdfFiles.length === 0) {
+                alert('请选择PDF文件');
+                return;
+            }
+
+            try {
+                // 显示进度条
+                const progressDiv = document.getElementById('upload-progress');
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                progressDiv.classList.remove('hidden');
+                
+                // 读取Excel文件
+                const workbook = await readExcelFile(excelFile);
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const articles = XLSX.utils.sheet_to_json(sheet);
+                
+                // 创建PDF文件名到文件的映射
+                const pdfMap = new Map();
+                for (let file of pdfFiles) {
+                    pdfMap.set(file.name.toLowerCase().replace('.pdf', ''), file);
+                }
+                
+                // 上传每篇文章
+                let completed = 0;
+                for (let article of articles) {
+                    progressText.textContent = `正在上传 ${article.Title} (${completed + 1}/${articles.length})`;
+                    
+                    // 查找对应的PDF文件
+                    const pdfFile = pdfMap.get(article.Title.toLowerCase());
+                    if (!pdfFile) {
+                        console.warn(`未找到文章 "${article.Title}" 对应的PDF文件`);
+                        continue;
+                    }
+                    
+                    // 准备文章数据
+                    const articleData = {
+                        title: article.Title,
+                        authors: article.Authors,
+                        date: formatExcelDate(article.Date),
+                        categories: article.Categories ? article.Categories.split(',').map(c => c.trim()) : [],
+                        abstract: article.Abstract
+                    };
+                    
+                    // 上传文章
+                    await ArticlesManager.addArticle(articleData, pdfFile);
+                    
+                    // 更新进度
+                    completed++;
+                    const progress = (completed / articles.length) * 100;
+                    progressBar.style.width = `${progress}%`;
+                }
+                
+                // 完成上传
+                progressText.textContent = '上传完成！';
+                await renderArticlesList();
+                alert('批量上传完成！');
+                
+                // 重置表单
+                document.getElementById('excel-file').value = '';
+                document.getElementById('pdf-files').value = '';
+                progressDiv.classList.add('hidden');
+                
+            } catch (error) {
+                console.error('批量上传失败:', error);
+                alert('批量上传失败: ' + error.message);
+            }
+        });
+
+        // 读取Excel文件
+        function readExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        resolve(workbook);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // 格式化Excel日期
+        function formatExcelDate(excelDate) {
+            if (!excelDate) return '';
+            
+            // 如果已经是字符串格式，直接返回
+            if (typeof excelDate === 'string') {
+                return excelDate;
+            }
+            
+            // 将Excel日期数字转换为JavaScript日期
+            const date = new Date((excelDate - 25569) * 86400 * 1000);
+            return date.toISOString().split('T')[0];
+        }
     </script>
 </body>
 </html> 
