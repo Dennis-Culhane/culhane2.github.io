@@ -1,4 +1,136 @@
-document.addEventListener('DOMContentLoaded', async () => {
+// 等待DOM加载完成并初始化页面
+async function initializePage() {
+    // 添加token保存按钮的事件监听器
+    const saveTokenBtn = document.getElementById('save-token-btn');
+    if (saveTokenBtn) {
+        saveTokenBtn.addEventListener('click', async function() {
+            const token = document.getElementById('github-token').value.trim();
+            
+            if (!token) {
+                alert('Please enter a GitHub token');
+                return;
+            }
+
+            try {
+                // 先清除旧token
+                sessionStorage.removeItem('github_token');
+                
+                if (await checkToken(token)) {
+                    sessionStorage.setItem('github_token', token);
+                    console.log('Token saved successfully');
+                    document.getElementById('token-input-section').classList.add('hidden');
+                    document.getElementById('main-content').classList.remove('hidden');
+                    await ArticlesManager.renderArticles();
+                } else {
+                    alert('Invalid GitHub token. Please check your token and try again.');
+                }
+            } catch (error) {
+                console.error('Error saving token:', error);
+                alert('Failed to verify token. Please check your connection and try again.');
+            }
+        });
+    }
+
+    // 添加批量上传按钮的事件监听器
+    const batchUploadBtn = document.getElementById('batch-upload-btn');
+    if (batchUploadBtn) {
+        batchUploadBtn.addEventListener('click', async function() {
+            const excelFile = document.getElementById('excel-file').files[0];
+            
+            if (!excelFile) {
+                alert('Please select an Excel file');
+                return;
+            }
+
+            try {
+                // 显示进度条
+                const progressDiv = document.getElementById('upload-progress');
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                progressDiv.classList.remove('hidden');
+                
+                // 读取Excel文件
+                const workbook = await readExcelFile(excelFile);
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rawArticles = XLSX.utils.sheet_to_json(sheet);
+                
+                if (!rawArticles || rawArticles.length === 0) {
+                    throw new Error('No valid articles found in Excel file');
+                }
+
+                // 标准化列名
+                const articles = rawArticles.map(row => ({
+                    Title: row.Title || row.title || '',
+                    Authors: row.Authors || row.authors || '',
+                    Date: row.Date || row.date || '',
+                    Categories: row.Categories || row.categories || '',
+                    Abstract: row.Abstract || row.abstract || '',
+                    URL: row.URL || row.url || row.Url || ''
+                }));
+
+                console.log('Normalized articles:', articles);
+                
+                // 上传每篇文章
+                let completed = 0;
+                for (let article of articles) {
+                    progressText.textContent = `Uploading ${article.Title} (${completed + 1}/${articles.length})`;
+                    
+                    // 验证必需字段
+                    if (!article.Title || !article.Authors || !article.URL) {
+                        console.warn(`Skipping article due to missing required fields:`, article);
+                        console.warn(`Required fields: Title, Authors, URL`);
+                        continue;
+                    }
+                    
+                    // 准备文章数据
+                    const articleData = {
+                        title: article.Title,
+                        authors: article.Authors,
+                        date: article.Date ? formatExcelDate(article.Date) : new Date().toISOString().split('T')[0],
+                        categories: article.Categories ? article.Categories.split(',').map(c => c.trim()) : [],
+                        abstract: article.Abstract || '',
+                        pdfUrl: article.URL
+                    };
+                    
+                    console.log('Uploading article:', articleData);
+                    
+                    // 上传文章
+                    try {
+                        await ArticlesManager.addArticle(articleData);
+                        console.log('Successfully uploaded article:', articleData.title);
+                        // 更新进度
+                        completed++;
+                        const progress = (completed / articles.length) * 100;
+                        progressBar.style.width = `${progress}%`;
+                    } catch (error) {
+                        console.error(`Failed to upload article "${articleData.title}":`, error);
+                        alert(`Failed to upload article "${articleData.title}": ${error.message}`);
+                        continue;
+                    }
+                }
+                
+                if (completed === 0) {
+                    throw new Error('No articles were successfully uploaded');
+                }
+                
+                // 完成上传
+                progressText.textContent = 'Upload complete!';
+                await ArticlesManager.renderArticles();
+                alert(`Successfully uploaded ${completed} out of ${articles.length} articles`);
+                
+                // 重置表单
+                document.getElementById('excel-file').value = '';
+                progressDiv.classList.add('hidden');
+                
+            } catch (error) {
+                console.error('Batch upload failed:', error);
+                alert('Batch upload failed: ' + error.message);
+                // 隐藏进度条
+                document.getElementById('upload-progress').classList.add('hidden');
+            }
+        });
+    }
+
     // 检查是否已有token
     const token = sessionStorage.getItem('github_token');
     if (token) {
@@ -15,7 +147,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             sessionStorage.removeItem('github_token');
         }
     }
-});
+}
+
+// 确保在DOM加载完成后再初始化
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePage);
+} else {
+    initializePage();
+}
 
 // Shared data handling functions
 window.ArticlesManager = {
@@ -23,7 +162,10 @@ window.ArticlesManager = {
     async getArticles(includeContent = false) {
         try {
             const token = sessionStorage.getItem('github_token');
-            if (!token) throw new Error('No GitHub token found');
+            if (!token) {
+                console.warn('No GitHub token found, returning empty array');
+                return [];
+            }
 
             const response = await fetch(`${config.apiBaseUrl}/contents/${config.articlesPath}`, {
                 headers: {
@@ -32,7 +174,10 @@ window.ArticlesManager = {
                 }
             });
 
-            if (!response.ok) throw new Error('Failed to fetch articles');
+            if (!response.ok) {
+                console.error('Failed to fetch articles:', response.status, response.statusText);
+                return [];
+            }
             
             const data = await response.json();
             if (response.status === 404) {
@@ -458,6 +603,11 @@ window.ArticlesManager = {
 // 验证token是否有效
 async function checkToken(token) {
     try {
+        if (!token || typeof token !== 'string') {
+            console.error('Invalid token format');
+            return false;
+        }
+
         const response = await fetch('https://api.github.com/user', {
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -472,7 +622,11 @@ async function checkToken(token) {
         
         try {
             const data = await response.json();
-            return !!data;
+            if (!data || !data.login) {
+                console.error('Invalid response data');
+                return false;
+            }
+            return true;
         } catch (e) {
             console.error('Failed to parse response:', e);
             return false;
@@ -484,26 +638,48 @@ async function checkToken(token) {
     }
 }
 
-// 保存token
-document.getElementById('save-token-btn').addEventListener('click', async function() {
-    const token = document.getElementById('github-token').value.trim();
-    
-    if (!token) {
-        alert('Please enter a GitHub token');
-        return;
-    }
+// 获取token的辅助函数
+window.getGitHubToken = function() {
+    return sessionStorage.getItem('github_token');
+};
 
-    try {
-        if (await checkToken(token)) {
-            sessionStorage.setItem('github_token', token);
-            document.getElementById('token-input-section').classList.add('hidden');
-            document.getElementById('main-content').classList.remove('hidden');
-            await ArticlesManager.renderArticles();
-        } else {
-            alert('Invalid GitHub token. Please check your token and try again.');
-        }
-    } catch (error) {
-        console.error('Error saving token:', error);
-        alert('Failed to verify token. Please check your connection and try again.');
+// 读取Excel文件
+function readExcelFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                resolve(workbook);
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+// 格式化Excel日期
+function formatExcelDate(excelDate) {
+    if (!excelDate) return '';
+    
+    // 尝试解析日期字符串
+    const date = new Date(excelDate);
+    if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
     }
-});
+    
+    // 将Excel日期数字转换为JavaScript日期
+    try {
+        const date = new Date((excelDate - 25569) * 86400 * 1000);
+        if (!isNaN(date.getTime())) {
+            return date.toISOString().split('T')[0];
+        }
+        return new Date().toISOString().split('T')[0];
+    } catch (error) {
+        console.warn('Failed to parse Excel date:', excelDate);
+        return new Date().toISOString().split('T')[0];
+    }
+}
