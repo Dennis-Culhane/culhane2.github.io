@@ -98,23 +98,22 @@ window.ArticlesManager = {
             // Convert to base64
             const base64Content = btoa(unescape(encodeURIComponent(jsonContent)));
 
-            // Get existing file SHA if it exists
-            let sha = '';
-            try {
-                const checkResponse = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                if (checkResponse.ok) {
-                    const data = await checkResponse.json();
-                    sha = data.sha;
+            // 获取最新的SHA
+            const checkResponse = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
                 }
-            } catch (error) {
-                console.log('No existing file found, will create new one');
+            });
+            
+            if (!checkResponse.ok) {
+                if (checkResponse.status !== 404) {
+                    throw new Error('Failed to check file status');
+                }
             }
+            
+            const fileData = checkResponse.ok ? await checkResponse.json() : null;
+            const sha = fileData ? fileData.sha : null;
 
             // Prepare request body
             const body = {
@@ -140,6 +139,11 @@ window.ArticlesManager = {
 
             if (!response.ok) {
                 const errorData = await response.json();
+                if (errorData.message.includes('does not match')) {
+                    // 如果SHA不匹配，重试一次
+                    console.log('SHA mismatch, retrying...');
+                    return await this.saveArticles(articles);
+                }
                 throw new Error(`GitHub API Error: ${errorData.message}`);
             }
 
