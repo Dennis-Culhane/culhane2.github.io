@@ -672,13 +672,23 @@
                 // 读取Excel文件
                 const workbook = await readExcelFile(excelFile);
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                const articles = XLSX.utils.sheet_to_json(sheet);
+                const rawArticles = XLSX.utils.sheet_to_json(sheet);
                 
-                if (!articles || articles.length === 0) {
+                if (!rawArticles || rawArticles.length === 0) {
                     throw new Error('No valid articles found in Excel file');
                 }
 
-                console.log('Parsed articles from Excel:', articles);
+                // 标准化列名
+                const articles = rawArticles.map(row => ({
+                    Title: row.Title || row.title || '',
+                    Authors: row.Authors || row.authors || '',
+                    Date: row.Date || row.date || '',
+                    Categories: row.Categories || row.categories || '',
+                    Abstract: row.Abstract || row.abstract || '',
+                    URL: row.URL || row.url || row.Url || ''
+                }));
+
+                console.log('Normalized articles:', articles);
                 
                 // 上传每篇文章
                 let completed = 0;
@@ -687,7 +697,8 @@
                     
                     // 验证必需字段
                     if (!article.Title || !article.Authors || !article.URL) {
-                        console.warn(`Article is missing required fields:`, article);
+                        console.warn(`Skipping article due to missing required fields:`, article);
+                        console.warn(`Required fields: Title, Authors, URL`);
                         continue;
                     }
                     
@@ -707,15 +718,15 @@
                     try {
                         await ArticlesManager.addArticle(articleData);
                         console.log('Successfully uploaded article:', articleData.title);
+                        // 更新进度
+                        completed++;
+                        const progress = (completed / articles.length) * 100;
+                        progressBar.style.width = `${progress}%`;
                     } catch (error) {
                         console.error(`Failed to upload article "${articleData.title}":`, error);
+                        alert(`Failed to upload article "${articleData.title}": ${error.message}`);
                         continue;
                     }
-                    
-                    // 更新进度
-                    completed++;
-                    const progress = (completed / articles.length) * 100;
-                    progressBar.style.width = `${progress}%`;
                 }
                 
                 if (completed === 0) {
