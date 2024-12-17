@@ -31,6 +31,16 @@ window.ArticlesManager = {
                 return [];
             }
 
+            if (!includeContent) {
+                const response = await fetch(config.getArticlesUrl());
+                if (!response.ok) {
+                    console.error('Failed to fetch articles:', response.status, response.statusText);
+                    return [];
+                }
+                const articles = await response.json();
+                return articles;
+            }
+
             const headers = {
                 'Accept': 'application/vnd.github.v3+json'
             };
@@ -64,12 +74,6 @@ window.ArticlesManager = {
 
             const articles = JSON.parse(atob(data.content));
             console.log('Parsed articles:', articles);
-            
-            if (!includeContent) {
-                articles.forEach(article => {
-                    delete article.content;
-                });
-            }
             
             return articles;
         } catch (error) {
@@ -484,7 +488,7 @@ window.ArticlesManager = {
     }
 };
 
-// 验证token是否有效
+// 验��token是否有效
 async function checkToken(token) {
     try {
         if (!token || typeof token !== 'string') {

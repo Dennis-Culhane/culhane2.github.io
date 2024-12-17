@@ -43,6 +43,11 @@ const config = {
             const token = window.getGitHubToken();
             return token ? { 'Authorization': `Bearer ${token}` } : {};
         }
+    },
+    
+    // 获取文章数据的URL
+    getArticlesUrl() {
+        return `${this.rawBaseUrl}/${this.articlesPath}`;
     }
 };
 
