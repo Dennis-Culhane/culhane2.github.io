@@ -34,5 +34,16 @@
     ],
     "abstract": "Many efforts have been made to develop segregation indices that incorporate spatial interaction based on the contiguity concept. Contiguity refers to how similar the concentration of the subject of interest in one areal unit is to that in adjacent areal units. However, highly segregated situations are typically considered to be isolated sections or enclaves rather than smoothly formed peaks of concentration in space. Therefore, highly segregated enclaves may not exhibit contiguity. In this paper, a new index to measure the degree of clustering is developed and it is compared with the existing indices of concentration or segregation. The proposed clustering index (7C) tends to give more weight to 'enclaveness' rather than contiguity alone. This may be a good property for those cases in which the primary concern of an investigator is the formation of enclaves of a socioeconomic subject, including minority populations, poverty, crime, epidemics, and mortgage red-lining. Additionally, its property of robustness to the citywide rate allows us to perform properly an intercity comparison of a given subject by index score even when the citywide rate varies significantly, unlike the other measures.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/41/"
+  },
+  {
+    "id": "1734470759409",
+    "title": "A Prevention-Centered Approach to Homelessness Assistance: A Paradigm Shift?",
+    "authors": "Dennis P Culhane, University of Pennsylvania",
+    "date": "2011-05-01",
+    "categories": [
+      "Homelessness Policy Analysis and Commentary; Homelessness Prevention and Housing Stabilization"
+    ],
+    "abstract": "Prevention has long been cited as an important part of any strategy to end homelessness. Nonetheless, effective prevention initiatives have proven difficult to implement in practice. The lack of a prevention-oriented policy framework has resulted in responses to homelessness that focus primarily on assisting those who have already lost their housing and, consequently, to the institutionalization of homelessness. Recent Federal legislation, however, signals an emergent paradigm shift towards prevention-based approaches to homelessness. This paper explores the conceptual underpinnings of successful prevention initiatives and reviews practice-based evidence from several successful prevention-oriented approaches to homelessness in the United States and Europe. We then outline a conceptual framework for a transformation of homeless assistance towards prevention oriented approaches, with a discussion of relevant issues of program design and practice, data collection standards, and program performance monitoring and evaluation.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/103/"
   }
 ]
