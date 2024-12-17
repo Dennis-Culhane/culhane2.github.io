@@ -78,35 +78,27 @@
         <div id="main-content" class="hidden space-y-8">
             <!-- Add Article Form -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 class="text-2xl font-bold mb-6">批量上传文章</h2>
+                <h2 class="text-2xl font-bold mb-6">Batch Upload Articles</h2>
                 <div class="space-y-6">
                     <div>
                         <label for="excel-file" class="block text-sm font-medium text-gray-700">Excel文件 (.xlsx)</label>
                         <input type="file" id="excel-file" accept=".xlsx" 
                             class="mt-1 block w-full py-2 px-3">
                         <p class="mt-2 text-sm text-gray-500">
-                            Excel文件应包含以下列：Title, Authors, Date, Categories (用逗号分隔), Abstract
-                        </p>
-                    </div>
-                    <div>
-                        <label for="pdf-files" class="block text-sm font-medium text-gray-700">PDF文件</label>
-                        <input type="file" id="pdf-files" accept=".pdf" multiple
-                            class="mt-1 block w-full py-2 px-3">
-                        <p class="mt-2 text-sm text-gray-500">
-                            PDF文件名应与Excel中的标题相对应
+                            Excel file should contain these columns: Title, Authors, Date, Categories (comma-separated), Abstract, URL
                         </p>
                     </div>
                     <div>
                         <button id="batch-upload-btn" type="button"
                             class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            开始上传
+                            Start Upload
                         </button>
                     </div>
                     <div id="upload-progress" class="hidden">
                         <div class="w-full bg-gray-200 rounded-full h-2.5">
                             <div id="progress-bar" class="bg-green-600 h-2.5 rounded-full" style="width: 0%"></div>
                         </div>
-                        <p id="progress-text" class="text-sm text-gray-600 mt-2">准备上传...</p>
+                        <p id="progress-text" class="text-sm text-gray-600 mt-2">Preparing upload...</p>
                     </div>
                 </div>
             </div>
@@ -146,9 +138,32 @@
                     </div>
 
                     <div>
-                        <label for="pdf" class="block text-sm font-medium text-gray-700">PDF File</label>
-                        <input type="file" id="pdf" name="pdf" accept=".pdf" required
-                            class="mt-1 block w-full py-2 px-3">
+                        <label for="pdf" class="block text-sm font-medium text-gray-700">PDF File or URL</label>
+                        <div class="space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <input type="radio" id="pdf-file-radio" name="pdf-type" value="file" checked
+                                    class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                                <label for="pdf-file-radio" class="text-sm text-gray-700">Upload File</label>
+                                
+                                <input type="radio" id="pdf-url-radio" name="pdf-type" value="url"
+                                    class="ml-4 focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                                <label for="pdf-url-radio" class="text-sm text-gray-700">Enter URL</label>
+                            </div>
+                            
+                            <div id="pdf-file-input" class="mt-1">
+                                <input type="file" id="pdf" name="pdf" accept=".pdf"
+                                    class="block w-full py-2 px-3">
+                            </div>
+                            
+                            <div id="pdf-url-input" class="mt-1 hidden">
+                                <input type="url" id="pdf-url" name="pdf-url"
+                                    class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="https://example.com/any-link">
+                                <p class="mt-1 text-sm text-gray-500">
+                                    You can enter any website link, not limited to PDF files
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
@@ -296,23 +311,43 @@
             
             try {
                 const formData = new FormData(this);
+                let pdfUrl = '';
+                
+                // 根据选择的类型获取PDF URL
+                const pdfType = document.querySelector('input[name="pdf-type"]:checked').value;
+                if (pdfType === 'file') {
+                    const pdfFile = formData.get('pdf');
+                    if (pdfFile.size > 0) {
+                        // 上传文件并获取URL
+                        pdfUrl = await ArticlesManager.uploadPDF(pdfFile);
+                    }
+                } else {
+                    pdfUrl = document.getElementById('pdf-url').value;
+                    if (!pdfUrl.match(/^https?:\/\/.+/i)) {
+                        throw new Error('Please provide a valid URL');
+                    }
+                }
+                
+                if (!pdfUrl) {
+                    throw new Error('Please provide a file or URL');
+                }
+                
                 const articleData = {
                     title: formData.get('title'),
                     authors: formData.get('authors'),
                     date: formData.get('date'),
-                    categories: formData.get('categories') ? formData.get('categories').split(',').map(c => c.trim()).filter(Boolean) : [],
-                    abstract: formData.get('abstract')
+                    categories: formData.get('categories') ? formData.get('categories').split(',').map(c => c.trim()) : [],
+                    abstract: formData.get('abstract'),
+                    pdfUrl: pdfUrl
                 };
                 
-                const pdfFile = formData.get('pdf');
+                // 添加文章
+                await ArticlesManager.addArticle(articleData);
                 
-                // Add article
-                await ArticlesManager.addArticle(articleData, pdfFile);
-                
-                // Clear form
+                // 清除表单
                 this.reset();
                 
-                // Refresh articles list
+                // 刷新文章列表
                 await renderArticlesList();
                 
                 alert('Article added successfully!');
@@ -621,15 +656,9 @@
         // 批量上传功能
         document.getElementById('batch-upload-btn').addEventListener('click', async function() {
             const excelFile = document.getElementById('excel-file').files[0];
-            const pdfFiles = document.getElementById('pdf-files').files;
             
             if (!excelFile) {
-                alert('请选择Excel文件');
-                return;
-            }
-            
-            if (pdfFiles.length === 0) {
-                alert('请选择PDF文件');
+                alert('Please select an Excel file');
                 return;
             }
 
@@ -645,21 +674,13 @@
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const articles = XLSX.utils.sheet_to_json(sheet);
                 
-                // 创建PDF文件名到文件的映射
-                const pdfMap = new Map();
-                for (let file of pdfFiles) {
-                    pdfMap.set(file.name.toLowerCase().replace('.pdf', ''), file);
-                }
-                
                 // 上传每篇文章
                 let completed = 0;
                 for (let article of articles) {
-                    progressText.textContent = `正在上传 ${article.Title} (${completed + 1}/${articles.length})`;
+                    progressText.textContent = `Uploading ${article.Title} (${completed + 1}/${articles.length})`;
                     
-                    // 查找对应的PDF文件
-                    const pdfFile = pdfMap.get(article.Title.toLowerCase());
-                    if (!pdfFile) {
-                        console.warn(`未找到文章 "${article.Title}" 对应的PDF文件`);
+                    if (!article.URL) {
+                        console.warn(`Article "${article.Title}" is missing URL`);
                         continue;
                     }
                     
@@ -669,11 +690,12 @@
                         authors: article.Authors,
                         date: formatExcelDate(article.Date),
                         categories: article.Categories ? article.Categories.split(',').map(c => c.trim()) : [],
-                        abstract: article.Abstract
+                        abstract: article.Abstract,
+                        pdfUrl: article.URL
                     };
                     
                     // 上传文章
-                    await ArticlesManager.addArticle(articleData, pdfFile);
+                    await ArticlesManager.addArticle(articleData);
                     
                     // 更新进度
                     completed++;
@@ -682,18 +704,17 @@
                 }
                 
                 // 完成上传
-                progressText.textContent = '上传完成！';
+                progressText.textContent = 'Upload complete!';
                 await renderArticlesList();
-                alert('批量上传完成！');
+                alert('Batch upload completed successfully!');
                 
                 // 重置表单
                 document.getElementById('excel-file').value = '';
-                document.getElementById('pdf-files').value = '';
                 progressDiv.classList.add('hidden');
                 
             } catch (error) {
-                console.error('批量上传失败:', error);
-                alert('批量上传失败: ' + error.message);
+                console.error('Batch upload failed:', error);
+                alert('Batch upload failed: ' + error.message);
             }
         });
 
@@ -728,6 +749,25 @@
             const date = new Date((excelDate - 25569) * 86400 * 1000);
             return date.toISOString().split('T')[0];
         }
+
+        // 添加文件/URL切换处理
+        document.querySelectorAll('input[name="pdf-type"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const fileInput = document.getElementById('pdf-file-input');
+                const urlInput = document.getElementById('pdf-url-input');
+                if (this.value === 'file') {
+                    fileInput.classList.remove('hidden');
+                    urlInput.classList.add('hidden');
+                    document.getElementById('pdf').required = true;
+                    document.getElementById('pdf-url').required = false;
+                } else {
+                    fileInput.classList.add('hidden');
+                    urlInput.classList.remove('hidden');
+                    document.getElementById('pdf').required = false;
+                    document.getElementById('pdf-url').required = true;
+                }
+            });
+        });
     </script>
 </body>
 </html> 

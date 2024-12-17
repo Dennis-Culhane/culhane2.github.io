@@ -1,74 +1,34 @@
 // Shared data handling functions
 window.ArticlesManager = {
     // Get articles from GitHub storage
-    async getArticles(useToken = false) {
+    async getArticles(includeContent = false) {
         try {
-            console.log('Fetching articles from GitHub...');
-            
-            // 构建请求头
-            const headers = {
-                'Accept': 'application/vnd.github.v3+json'
-            };
-            
-            // 仅在需要时添加 token
-            if (useToken) {
-                const token = window.getGitHubToken();
-                if (!token) {
-                    throw new Error('GitHub token is not set');
-                }
-                headers['Authorization'] = `Bearer ${token}`;
-            }
+            const token = sessionStorage.getItem('github_token');
+            if (!token) throw new Error('No GitHub token found');
 
-            const response = await fetch(`${window.GITHUB_API_URL}/contents/data/articles.json`, {
-                headers: headers
+            const response = await fetch(`${config.apiBaseUrl}/contents/${config.articlesPath}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
             });
 
-            if (response.status === 404) {
-                console.log('No articles file found, initializing with empty array');
-                if (useToken) {
-                    await this.saveArticles([]);
-                }
-                return [];
-            }
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`Failed to fetch articles: ${errorData.message || response.statusText}`);
-            }
-
-            const data = await response.json();
-            if (!data.content) {
-                console.warn('No content found in articles file');
-                return [];
-            }
-
-            const content = atob(data.content);
-            let articles = [];
+            if (!response.ok) throw new Error('Failed to fetch articles');
             
-            try {
-                articles = JSON.parse(content);
-                if (!Array.isArray(articles)) {
-                    console.warn('Articles data is not an array, initializing empty array');
-                    articles = [];
-                }
-
-                // 确保每篇文章都有唯一的 ID
-                articles = articles.map(article => {
-                    if (!article.id) {
-                        article.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-                    }
-                    return article;
+            const data = await response.json();
+            const articles = JSON.parse(atob(data.content));
+            
+            if (!includeContent) {
+                // 如果不需要完整内容，移除大型字段
+                articles.forEach(article => {
+                    delete article.content;
                 });
-            } catch (error) {
-                console.error('Error parsing articles JSON:', error);
-                articles = [];
             }
-
-            console.log('Articles loaded:', articles);
+            
             return articles;
         } catch (error) {
-            console.error('Error loading articles:', error);
-            return [];
+            console.error('Error fetching articles:', error);
+            throw error;
         }
     },
 
