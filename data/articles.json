@@ -30,7 +30,7 @@
     "categories": [
       "Homelessness among People with Behavioral Health-related Disabilities; Homelessness among Families with Children"
     ],
-    "abstract": "Objectives. This study compares the use of and cost for behavioral health services among heads of homeless and housed poor families. Methods. Medicaid records for 59,135 heads of families receiving Temporary Assistance to Needy Families benefits were matched with data from PhiladelphiaÃ¢ÂÂs municipal shelter system. Propensity score matching was used to select a matched control group to those identified as having been homeless between 1997 and 2003. Behavioral health services utilization was then assessed based on Medicaid claims records. Results. Substantially higher levels of behavioral health services use and corresponding costs were found among heads of families with a history of shelter use. Conclusions. Greater use of behavioral health services by heads of homeless families may reflect greater severity of disorders or a greater likelihood to seek treatment relative to what has been suggested by previous research.",
+    "abstract": "Objectives. This study compares the use of and cost for behavioral health services among heads of homeless and housed poor families. Methods. Medicaid records for 59,135 heads of families receiving Temporary Assistance to Needy Families benefits were matched with data from PhiladelphiaÃÂ¢ÃÂÃÂs municipal shelter system. Propensity score matching was used to select a matched control group to those identified as having been homeless between 1997 and 2003. Behavioral health services utilization was then assessed based on Medicaid claims records. Results. Substantially higher levels of behavioral health services use and corresponding costs were found among heads of families with a history of shelter use. Conclusions. Greater use of behavioral health services by heads of homeless families may reflect greater severity of disorders or a greater likelihood to seek treatment relative to what has been suggested by previous research.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/91/"
   },
   {
@@ -41,7 +41,7 @@
     "categories": [
       "Homelessness Program Accountability and Costs; Supportive Housing Interventions for Formerly Homeless Persons"
     ],
-    "abstract": "Policy makers and advocates in industrialised economies have increasingly couched arguments for addressing homelessness in cost-offset paradigms. In the USA, there is a robust body of evidence demonstrating cost offsets of supportive housing, whereas rigorous evidence from the UK, Europe and Australia is limited. The present article contributes to the evidence base with results drawn from a linked administrative data-set including: police, prison, probation, parole, courts, emergency department, hospital admitted patients, ambulance, mental health and homelessness services data. The results show that in twelve months when people were homeless, they used on average $48,217 (Â£25,776) worth of government services; in the twelve months as tenants of supportive housing, the cohort used on average, including the cost of supportive housing, $35,117 (Â£18,773) in government services. Although social work only infrequently draws on cost arguments to substantiate practice and intervention, the article argues that cost-offset evidence is consistent with social workâs commitment to evidence base practice. Moreover, analysis of services that people use when securely housed compared to homeless adds further evidence to demonstrate that peopleâs actions, and their status as clients, is mediated by resources and opportunities available.",
+    "abstract": "Policy makers and advocates in industrialised economies have increasingly couched arguments for addressing homelessness in cost-offset paradigms. In the USA, there is a robust body of evidence demonstrating cost offsets of supportive housing, whereas rigorous evidence from the UK, Europe and Australia is limited. The present article contributes to the evidence base with results drawn from a linked administrative data-set including: police, prison, probation, parole, courts, emergency department, hospital admitted patients, ambulance, mental health and homelessness services data. The results show that in twelve months when people were homeless, they used on average $48,217 (ÃÂ£25,776) worth of government services; in the twelve months as tenants of supportive housing, the cohort used on average, including the cost of supportive housing, $35,117 (ÃÂ£18,773) in government services. Although social work only infrequently draws on cost arguments to substantiate practice and intervention, the article argues that cost-offset evidence is consistent with social workÃ¢ÂÂs commitment to evidence base practice. Moreover, analysis of services that people use when securely housed compared to homeless adds further evidence to demonstrate that peopleÃ¢ÂÂs actions, and their status as clients, is mediated by resources and opportunities available.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/204/"
   },
   {
@@ -54,5 +54,16 @@
     ],
     "abstract": "N/A",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/106/"
+  },
+  {
+    "id": "1734475553049",
+    "title": "Predictive Risk Modeling to Identify Homeless Clients at Risk for Prioritizing Services Using Routinely Collected Data",
+    "authors": "Chamari I Kithulgoda, Aukland University of Technology",
+    "date": "2022-01-01",
+    "categories": [
+      "Homelessness Management Information Systems and the Policy Uses of Administrative Data; Homelessness Prevention and Housing Stabilization"
+    ],
+    "abstract": "For most homelessness service providers, the number of clients who are eligible for long-term housing outstrips the availability.This study uses a cohort of housing assessments taken from a mid-size county in the US and machine learning methods to train a Predictive Risk Model (PRM) that identifies clients who would experience multiple adversities in the future. The PRM outperforms the Vulnerability Index-Service Prioritization Decision Assistance Tool (VI-SPDAT) in flagging clients at the greatest risk of adversities. The proposed method can be readily used by any Continuum of Care (CoC) that holds electronic housing assessments and service records.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/266/"
   }
 ]
