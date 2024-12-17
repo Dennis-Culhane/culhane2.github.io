@@ -22,5 +22,17 @@
     ],
     "abstract": "An analysis of 8,251 homeless children in New York City found that 18% of them received child welfare services over the five-year period following their first shelter admission, and an additional 6% had a history of having received such services before their first shelter admission. Recurrent use of public shelters, exposure to domestic violence, older age at first episode of homelessness, and larger number of children in a household were associated with an increased risk of child welfare involvement. The high rate of crossover between homelessness and the child welfare system suggests the need for service coordination for children in homeless families.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/17/"
+  },
+  {
+    "id": "1734470757800",
+    "title": "A Perimeter-based Clustering Index for Measuring Spatial Segregation: A Cognitive GIS Approach",
+    "authors": "Dennis P Culhane, University of Pennsylvania",
+    "date": "1998-01-01",
+    "categories": [
+      "Neighborhood Factors in Health",
+      "Development and Behavior"
+    ],
+    "abstract": "Many efforts have been made to develop segregation indices that incorporate spatial interaction based on the contiguity concept. Contiguity refers to how similar the concentration of the subject of interest in one areal unit is to that in adjacent areal units. However, highly segregated situations are typically considered to be isolated sections or enclaves rather than smoothly formed peaks of concentration in space. Therefore, highly segregated enclaves may not exhibit contiguity. In this paper, a new index to measure the degree of clustering is developed and it is compared with the existing indices of concentration or segregation. The proposed clustering index (7C) tends to give more weight to 'enclaveness' rather than contiguity alone. This may be a good property for those cases in which the primary concern of an investigator is the formation of enclaves of a socioeconomic subject, including minority populations, poverty, crime, epidemics, and mortgage red-lining. Additionally, its property of robustness to the citywide rate allows us to perform properly an intercity comparison of a given subject by index score even when the citywide rate varies significantly, unlike the other measures.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/41/"
   }
 ]
