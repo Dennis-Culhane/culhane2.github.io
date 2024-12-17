@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dennis P. Culhane - Academic Profile</title>
-    <!-- 基础样式和UI库 -->
-    <script src="https://cdn.tailwindcss.com" defer></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 允许跨域请求 -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; img-src 'self' https: data:;">
     
     <!-- 应用配置 -->
     <script>
@@ -13,19 +15,20 @@
         window.GITHUB_CONFIG = {
             REPO_OWNER: 'Dennis-Culhane',
             REPO_NAME: 'culhane2.github.io',
-            BRANCH: 'main'
+            BRANCH: 'main',
+            RAW_CONTENT_URL: 'https://raw.githubusercontent.com'
         };
         
-        // GitHub API URLs
-        window.GITHUB_API_URL = `https://api.github.com/repos/${window.GITHUB_CONFIG.REPO_OWNER}/${window.GITHUB_CONFIG.REPO_NAME}`;
-        window.GITHUB_RAW_URL = `https://raw.githubusercontent.com/${window.GITHUB_CONFIG.REPO_OWNER}/${window.GITHUB_CONFIG.REPO_NAME}/${window.GITHUB_CONFIG.BRANCH}`;
-        
+        // 配置对象
         window.config = {
-            apiBaseUrl: window.GITHUB_API_URL,
-            rawBaseUrl: window.GITHUB_RAW_URL,
-            branch: window.GITHUB_CONFIG.BRANCH,
+            // 文件路径
             articlesPath: 'data/articles.json',
-            pdfStoragePath: 'papers/'
+            pdfStoragePath: 'papers/',
+        
+            // 获取文章数据的URL
+            getArticlesUrl() {
+                return `${window.GITHUB_CONFIG.RAW_CONTENT_URL}/${window.GITHUB_CONFIG.REPO_OWNER}/${window.GITHUB_CONFIG.REPO_NAME}/${window.GITHUB_CONFIG.BRANCH}/${this.articlesPath}`;
+            }
         };
     </script>
     
@@ -41,7 +44,33 @@
         document.addEventListener('DOMContentLoaded', async function() {
             try {
                 // 初始化页面
-                await ArticlesManager.renderArticles('articles-list', false);
+                const response = await fetch(window.config.getArticlesUrl());
+                if (!response.ok) {
+                    throw new Error('Failed to fetch articles');
+                }
+                
+                const articles = await response.json();
+                const container = document.getElementById('articles-list');
+                
+                if (!articles || articles.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center">No articles found.</p>';
+                    return;
+                }
+                
+                // 渲染文章列表
+                container.innerHTML = articles.map(article => `
+                    <div class="article-card">
+                        <h2 class="title-ellipsis">${article.title || 'Untitled'}</h2>
+                        <p class="authors-ellipsis">${article.authors || 'Unknown'}</p>
+                        <p class="categories-ellipsis">${article.categories ? article.categories.join(', ') : ''}</p>
+                        <p class="abstract-clamp">${article.abstract || 'No abstract available'}</p>
+                        <div class="mt-4">
+                            <a href="${article.pdfUrl}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                View Article
+                            </a>
+                        </div>
+                    </div>
+                `).join('');
             } catch (error) {
                 console.error('Initialization error:', error);
                 const container = document.getElementById('articles-list');

@@ -444,64 +444,108 @@
                 .trim();
         }
 
-        // 修改 renderArticlesList 函数
+        // Render articles list
         async function renderArticlesList() {
-            const container = document.getElementById('articles-list');
-            const articles = await ArticlesManager.getArticles(true); // 使用 true 来获取完整的文章数据
-            
-            console.log('Fetched articles:', articles);
-            
-            if (!articles || articles.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center col-span-2">No articles found.</p>';
-                return;
-            }
+            try {
+                const articles = await ArticlesManager.getArticles(true);
+                console.log('Fetched articles:', articles);
 
-            // 按日期排序（最新的在前）
-            articles.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            container.innerHTML = articles.map(article => {
-                if (!article.id) {
-                    console.error('Article missing ID:', article);
-                    return '';
+                const container = document.getElementById('articles-list');
+                if (!container) {
+                    throw new Error('Articles container not found');
                 }
-                
-                return `
-                    <div class="article-card relative">
-                        <div class="absolute top-4 left-4">
-                            <input type="checkbox" 
-                                   class="article-checkbox w-4 h-4 text-blue-600 rounded border-gray-300"
-                                   data-article-id="${article.id}">
-                        </div>
-                        <div class="pl-8">
-                            <h2 class="title-ellipsis cursor-pointer hover:text-blue-600" 
-                                onclick="openEditModal('${article.id}')"
-                                title="Click to edit">
-                                ${cleanText(article.title)}
-                            </h2>
-                            <p class="authors-ellipsis">${cleanText(article.authors)}</p>
-                            <p class="categories-ellipsis">${article.categories ? article.categories.join(', ') : ''}</p>
-                            <p class="abstract-clamp">${cleanText(article.abstract || '')}</p>
-                            <div class="mt-4 flex space-x-2">
-                                <a href="${article.pdfUrl}" target="_blank" 
-                                   class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800">
-                                    View PDF
-                                </a>
-                                <button onclick="openEditModal('${article.id}')" 
-                                        class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800">
-                                    Edit
-                                </button>
-                                <button onclick="deleteArticle('${article.id}')" 
-                                        class="px-3 py-1 text-sm text-red-600 hover:text-red-800">
-                                    Delete
-                                </button>
+
+                if (!articles || articles.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center">No articles found.</p>';
+                    return;
+                }
+
+                container.innerHTML = articles.map(article => `
+                    <div class="article-card">
+                        <div class="flex items-center">
+                            <input type="checkbox" class="article-checkbox mr-4" data-article-id="${article.id}">
+                            <div class="flex-1">
+                                <h2 class="title-ellipsis">${article.title}</h2>
+                                <p class="authors-ellipsis">${article.authors}</p>
+                                <p class="categories-ellipsis">${article.categories.join(', ')}</p>
+                                <p class="abstract-clamp">${article.abstract}</p>
+                                <div class="mt-4 flex justify-between">
+                                    <a href="${article.pdfUrl}" target="_blank" class="text-blue-600 hover:text-blue-800">View Article</a>
+                                    <button onclick="deleteArticle('${article.id}')" class="text-red-600 hover:text-red-800">Delete</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                `;
-            }).filter(Boolean).join('');
+                `).join('');
 
-            // 添加批量删除相关的事件监听器
-            setupBatchDeleteListeners();
+                // 初始化批量删除功能
+                initializeBatchDelete();
+            } catch (error) {
+                console.error('Error rendering articles:', error);
+                alert('Error loading articles: ' + error.message);
+            }
+        }
+
+        // 初始化批量删除功能
+        function initializeBatchDelete() {
+            const selectAllBtn = document.getElementById('select-all-btn');
+            const batchDeleteBtn = document.getElementById('batch-delete-btn');
+            const checkboxes = document.querySelectorAll('.article-checkbox');
+
+            if (!selectAllBtn || !batchDeleteBtn) {
+                console.warn('Batch delete buttons not found');
+                return;
+            }
+
+            // 更新批量删除按钮显示状态
+            function updateBatchDeleteButton() {
+                const checkedBoxes = document.querySelectorAll('.article-checkbox:checked');
+                batchDeleteBtn.classList.toggle('hidden', checkedBoxes.length === 0);
+                selectAllBtn.textContent = checkedBoxes.length === checkboxes.length ? 'Deselect All' : 'Select All';
+            }
+
+            // 全选/取消全选
+            selectAllBtn.addEventListener('click', () => {
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                checkboxes.forEach(cb => cb.checked = !allChecked);
+                updateBatchDeleteButton();
+            });
+
+            // 监听每个复选框的变化
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateBatchDeleteButton);
+            });
+
+            // 批量删除
+            batchDeleteBtn.addEventListener('click', async () => {
+                const selectedIds = Array.from(document.querySelectorAll('.article-checkbox:checked'))
+                    .map(cb => cb.dataset.articleId);
+
+                if (selectedIds.length === 0) return;
+
+                if (confirm(`Are you sure you want to delete ${selectedIds.length} selected articles?`)) {
+                    try {
+                        batchDeleteBtn.disabled = true;
+                        batchDeleteBtn.textContent = 'Deleting...';
+
+                        for (const id of selectedIds) {
+                            await ArticlesManager.deleteArticle(id);
+                        }
+
+                        await renderArticlesList();
+                        alert('Selected articles deleted successfully!');
+                    } catch (error) {
+                        console.error('Error deleting articles:', error);
+                        alert('Error deleting articles: ' + error.message);
+                    } finally {
+                        batchDeleteBtn.disabled = false;
+                        batchDeleteBtn.textContent = 'Delete Selected';
+                    }
+                }
+            });
+
+            // 初始化按钮状态
+            updateBatchDeleteButton();
         }
 
         // 修改删除文章的函数
@@ -621,80 +665,6 @@
         document.getElementById('edit-modal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeEditModal();
-            }
-        });
-
-        // 添加批量删除相关函数
-        function setupBatchDeleteListeners() {
-            const selectAllBtn = document.getElementById('select-all-btn');
-            const batchDeleteBtn = document.getElementById('batch-delete-btn');
-            const checkboxes = document.querySelectorAll('.article-checkbox');
-
-            // 更新批量删除按钮显示状态
-            function updateBatchDeleteButton() {
-                const checkedBoxes = document.querySelectorAll('.article-checkbox:checked');
-                batchDeleteBtn.classList.toggle('hidden', checkedBoxes.length === 0);
-                
-                // 更新全选按钮文本
-                const allChecked = checkedBoxes.length === checkboxes.length;
-                selectAllBtn.textContent = allChecked ? 'Deselect All' : 'Select All';
-            }
-
-            // 全选/取消全选
-            selectAllBtn.addEventListener('click', () => {
-                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-                checkboxes.forEach(cb => cb.checked = !allChecked);
-                updateBatchDeleteButton();
-            });
-
-            // 监听每个复选框的变化
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', updateBatchDeleteButton);
-            });
-
-            // 批量删除
-            batchDeleteBtn.addEventListener('click', async () => {
-                const selectedIds = Array.from(document.querySelectorAll('.article-checkbox:checked'))
-                    .map(cb => cb.dataset.articleId);
-
-                if (selectedIds.length === 0) return;
-
-                if (confirm(`Are you sure you want to delete ${selectedIds.length} selected articles?`)) {
-                    try {
-                        // 显示加载状态
-                        batchDeleteBtn.disabled = true;
-                        batchDeleteBtn.textContent = 'Deleting...';
-
-                        // 依次删除所有选中的文章
-                        for (const id of selectedIds) {
-                            await ArticlesManager.deleteArticle(id);
-                        }
-
-                        await renderArticlesList();
-                        alert('Selected articles deleted successfully!');
-                    } catch (error) {
-                        console.error('Error deleting articles:', error);
-                        alert('Error deleting articles: ' + error.message);
-                    } finally {
-                        batchDeleteBtn.disabled = false;
-                        batchDeleteBtn.textContent = 'Delete Selected';
-                    }
-                }
-            });
-
-            // 初始化批量删除按钮状态
-            updateBatchDeleteButton();
-        }
-
-        // 在页面加载完成后初始化批量删除功能
-        document.addEventListener('DOMContentLoaded', async function() {
-            // ... 保持现有的 token 检查代码 ...
-            
-            if (token && (await checkToken(token))) {
-                document.getElementById('token-input-section').classList.add('hidden');
-                document.getElementById('main-content').classList.remove('hidden');
-                await renderArticlesList();
-                // setupBatchDeleteListeners 会在 renderArticlesList 中被调用
             }
         });
 
