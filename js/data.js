@@ -200,7 +200,7 @@ window.ArticlesManager = {
     // Save articles to GitHub storage (需要 token)
     async saveArticles(articles) {
         try {
-            const token = window.getGitHubToken();
+            const token = sessionStorage.getItem('github_token');
             if (!token) {
                 throw new Error('GitHub token is not set');
             }
@@ -288,7 +288,7 @@ window.ArticlesManager = {
     // Upload PDF file to GitHub (需要 token)
     async uploadPDF(file) {
         try {
-            const token = window.getGitHubToken();
+            const token = sessionStorage.getItem('github_token');
             if (!token) {
                 throw new Error('GitHub token is not set');
             }
@@ -396,7 +396,7 @@ window.ArticlesManager = {
     // Add new article (需要 token)
     async addArticle(articleData) {
         try {
-            const token = window.getGitHubToken();
+            const token = sessionStorage.getItem('github_token');
             if (!token) {
                 throw new Error('GitHub token is not set');
             }
@@ -456,7 +456,7 @@ window.ArticlesManager = {
     // Delete article (需要 token)
     async deleteArticle(id) {
         try {
-            const token = window.getGitHubToken();
+            const token = sessionStorage.getItem('github_token');
             if (!token) {
                 throw new Error('GitHub token is not set');
             }
@@ -630,11 +630,6 @@ async function checkToken(token) {
         return false;
     }
 }
-
-// 获取token的辅助函数
-window.getGitHubToken = function() {
-    return sessionStorage.getItem('github_token');
-};
 
 // 读取Excel文件
 function readExcelFile(file) {
