@@ -12,7 +12,7 @@
   },
   {
     "id": "1734470940999",
-    "title": "Producing a National Incidence RateÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂThe Viability and Challenges Related to Using Administrative Data",
+    "title": "Producing a National Incidence RateÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂThe Viability and Challenges Related to Using Administrative Data",
     "authors": "Denise C. Herz, California State University",
     "date": "2018-12-01",
     "categories": [
@@ -55,7 +55,7 @@
       "Homelessness Population Estimation",
       "Demographic Composition and Trends; Sampling from Major Themes"
     ],
-    "abstract": "Previous estimates of the size and composition of the U.S. homeless population have been based on cross-sectional survey methodologies. National enumeration efforts have yielded point-prevalence estimates ranging from 0.11 to 0.25 percent of the population. This study reports data from shelter databases in Philadelphia and New York City that record identifiers for all persons admitted and so make possible unduplicated counts of users.\r\n\r\nUnduplicated counts of shelter users yield annual rates for 1992 of about 1 percent for both cities and rates near 3 percent over three years in Philadelphia (1990ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ92) and over five years (1988ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ92) in New York City. The annual rates are three times greater than rates documented by point-prevalence studies. Shelter bed turnover rates are reported, as are average monthly first admission and readmission counts over a two-year period. Implications for future research and public policy are discussed.",
+    "abstract": "Previous estimates of the size and composition of the U.S. homeless population have been based on cross-sectional survey methodologies. National enumeration efforts have yielded point-prevalence estimates ranging from 0.11 to 0.25 percent of the population. This study reports data from shelter databases in Philadelphia and New York City that record identifiers for all persons admitted and so make possible unduplicated counts of users.\r\n\r\nUnduplicated counts of shelter users yield annual rates for 1992 of about 1 percent for both cities and rates near 3 percent over three years in Philadelphia (1990ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ92) and over five years (1988ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ92) in New York City. The annual rates are three times greater than rates documented by point-prevalence studies. Shelter bed turnover rates are reported, as are average monthly first admission and readmission counts over a two-year period. Implications for future research and public policy are discussed.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/10/"
   },
   {
@@ -113,5 +113,16 @@
     ],
     "abstract": "This study examined the rate of admission to public shelters between 1990 and 1992 among persons who received Medicaid-reimbursed inpatient and outpatient psychiatric services and inpatient substance abuse services in Philadelphia, between 1985 and 1993. Results show that 7.5% of such persons were admitted to public shelters during the three-year period, nearly 2.7 times the rate of shelter use by the general population (2.8 percent). Medicaid recipients treated for serious mental disorders had a three year rate of shelter use of 8.4 percent. Those receiving inpatient treatment for substance use disorders, including detoxification services, had a three-year rate of shelter admission of 10.2 percent.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/58/"
+  },
+  {
+    "id": "1734470955788",
+    "title": "The Relationship between Community Investment in Permanent Supportive Housing and Chronic Homelessness",
+    "authors": "Thomas Byrne",
+    "date": "1900-01-01",
+    "categories": [
+      "Supportive Housing Interventions for Formerly Homeless Persons; Homelessness Policy Analysis and Commentary; Structural Determinants of Homelessness"
+    ],
+    "abstract": "In recent years, permanent supportive housing PSH has emerged as the preferred intervention for addressing chronic homelessness in the United States. However, almost all prior studies examining the effectiveness of PSH have been conducted at the individual level, with only minimal attempts to empirically test the relationship between PSH and chronic homelessness at the community level. This study uses longitudinal data collected by the US Department of Housing and Urban Development HUD and several other sources to model the relationship between measures of community investment in PSH and rates of chronic homelessness. The results show modest negative associations between increased investment in PSH and rates of chronic homelessness over time. We discuss the implications of these findings for ongoing efforts to address chronic homelessness and future research.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/140/"
   }
 ]
