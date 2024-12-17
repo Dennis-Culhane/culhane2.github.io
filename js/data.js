@@ -1,5 +1,24 @@
+document.addEventListener('DOMContentLoaded', async () => {
+    // 检查是否已有token
+    const token = sessionStorage.getItem('github_token');
+    if (token) {
+        try {
+            if (await checkToken(token)) {
+                document.getElementById('token-input-section').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                await ArticlesManager.renderArticlesList();
+            } else {
+                sessionStorage.removeItem('github_token');
+            }
+        } catch (error) {
+            console.error('Error during initialization:', error);
+            sessionStorage.removeItem('github_token');
+        }
+    }
+});
+
 // Shared data handling functions
-window.ArticlesManager = {
+const ArticlesManager = {
     // Get articles from GitHub storage
     async getArticles(includeContent = false) {
         try {
@@ -16,10 +35,18 @@ window.ArticlesManager = {
             if (!response.ok) throw new Error('Failed to fetch articles');
             
             const data = await response.json();
+            if (response.status === 404) {
+                return [];
+            }
+            
+            if (!data || !data.content) {
+                console.warn('No content found in response');
+                return [];
+            }
+
             const articles = JSON.parse(atob(data.content));
             
             if (!includeContent) {
-                // 如果不需要完整内容，移除大型字段
                 articles.forEach(article => {
                     delete article.content;
                 });
@@ -28,7 +55,7 @@ window.ArticlesManager = {
             return articles;
         } catch (error) {
             console.error('Error fetching articles:', error);
-            throw error;
+            return [];
         }
     },
 
@@ -365,7 +392,7 @@ window.ArticlesManager = {
     },
 
     // Render articles list
-    async renderArticles(containerId, isAdmin = false) {
+    async renderArticlesList(containerId, isAdmin = false) {
         try {
             if (!containerId) {
                 throw new Error('Container ID is required');
@@ -430,3 +457,59 @@ window.ArticlesManager = {
         }
     }
 };
+
+// 验证token是否有效
+async function checkToken(token) {
+    try {
+        const response = await fetch('https://api.github.com/user', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Token verification failed:', response.status, response.statusText);
+            return false;
+        }
+        
+        try {
+            const data = await response.json();
+            return !!data;
+        } catch (e) {
+            console.error('Failed to parse response:', e);
+            return false;
+        }
+
+    } catch (error) {
+        console.error('Token verification error:', error);
+        return false;
+    }
+}
+
+// 保存token
+document.getElementById('save-token-btn').addEventListener('click', async function() {
+    const token = document.getElementById('github-token').value.trim();
+    
+    if (!token) {
+        alert('Please enter a GitHub token');
+        return;
+    }
+
+    try {
+        if (await checkToken(token)) {
+            sessionStorage.setItem('github_token', token);
+            document.getElementById('token-input-section').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            await renderArticlesList();
+        } else {
+            alert('Invalid GitHub token. Please check your token and try again.');
+        }
+    } catch (error) {
+        console.error('Error saving token:', error);
+        alert('Failed to verify token. Please check your connection and try again.');
+    }
+});
+
+// 导出到全局
+window.ArticlesManager = ArticlesManager;
