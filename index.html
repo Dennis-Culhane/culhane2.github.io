@@ -4,23 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dennis P. Culhane - Academic Profile</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-    <!-- Load configuration and shared code -->
-    <script src="js/config.js"></script>
+    <!-- 基础样式和UI库 -->
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    
+    <!-- 应用配置 -->
     <script>
-        // 等待所有依赖加载完成
-        window.addEventListener('load', function() {
-            // 动态加载data.js
-            const script = document.createElement('script');
-            script.src = 'js/data.js';
-            script.onload = function() {
-                // data.js加载完成后初始化
-                if (typeof initializePage === 'function') {
-                    initializePage();
-                }
-            };
-            document.head.appendChild(script);
+        // 基础配置
+        window.GITHUB_CONFIG = {
+            REPO_OWNER: 'Dennis-Culhane',
+            REPO_NAME: 'culhane2.github.io',
+            BRANCH: 'main'
+        };
+        
+        // GitHub API URLs
+        window.GITHUB_API_URL = `https://api.github.com/repos/${window.GITHUB_CONFIG.REPO_OWNER}/${window.GITHUB_CONFIG.REPO_NAME}`;
+        window.GITHUB_RAW_URL = `https://raw.githubusercontent.com/${window.GITHUB_CONFIG.REPO_OWNER}/${window.GITHUB_CONFIG.REPO_NAME}/${window.GITHUB_CONFIG.BRANCH}`;
+        
+        window.config = {
+            apiBaseUrl: window.GITHUB_API_URL,
+            rawBaseUrl: window.GITHUB_RAW_URL,
+            branch: window.GITHUB_CONFIG.BRANCH,
+            articlesPath: 'data/articles.json',
+            pdfStoragePath: 'papers/'
+        };
+    </script>
+    
+    <!-- 依赖库 -->
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js" defer></script>
+    
+    <!-- 应用代码 -->
+    <script src="js/data.js" defer></script>
+    
+    <!-- 初始化脚本 -->
+    <script defer>
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof initializePage === 'function') {
+                initializePage().catch(console.error);
+            }
         });
     </script>
     <style>
