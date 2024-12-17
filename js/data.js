@@ -24,17 +24,26 @@ window.ArticlesManager = {
     async getArticles(includeContent = false) {
         try {
             const token = sessionStorage.getItem('github_token');
-            if (!token) {
+            console.log('Getting articles, token exists:', !!token);
+
+            if (!token && includeContent) {
                 console.warn('No GitHub token found, returning empty array');
                 return [];
             }
 
+            const headers = {
+                'Accept': 'application/vnd.github.v3+json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${config.apiBaseUrl}/contents/${config.articlesPath}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
+                headers: headers
             });
+
+            console.log('Articles API response:', response.status, response.statusText);
 
             if (!response.ok) {
                 console.error('Failed to fetch articles:', response.status, response.statusText);
@@ -42,6 +51,8 @@ window.ArticlesManager = {
             }
             
             const data = await response.json();
+            console.log('Raw API response:', data);
+
             if (response.status === 404) {
                 return [];
             }
@@ -52,6 +63,7 @@ window.ArticlesManager = {
             }
 
             const articles = JSON.parse(atob(data.content));
+            console.log('Parsed articles:', articles);
             
             if (!includeContent) {
                 articles.forEach(article => {
@@ -67,8 +79,14 @@ window.ArticlesManager = {
     },
 
     // Save articles to GitHub storage (需要 token)
-    async saveArticles(articles) {
+    async saveArticles(articles, retryCount = 0) {
         try {
+            // 最大重试次数
+            const MAX_RETRIES = 3;
+            if (retryCount >= MAX_RETRIES) {
+                throw new Error('Maximum retry attempts reached');
+            }
+
             const token = sessionStorage.getItem('github_token');
             if (!token) {
                 throw new Error('GitHub token is not set');
@@ -140,9 +158,11 @@ window.ArticlesManager = {
             if (!response.ok) {
                 const errorData = await response.json();
                 if (errorData.message.includes('does not match')) {
-                    // 如果SHA不匹配，重试一次
-                    console.log('SHA mismatch, retrying...');
-                    return await this.saveArticles(articles);
+                    // 如果SHA不匹配，等待一段时间后重试
+                    const delay = Math.min(1000 * Math.pow(2, retryCount), 5000); // 指数退避，最大5秒
+                    console.log(`SHA mismatch, retrying in ${delay}ms... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return await this.saveArticles(articles, retryCount + 1);
                 }
                 throw new Error(`GitHub API Error: ${errorData.message}`);
             }
@@ -153,6 +173,9 @@ window.ArticlesManager = {
             console.log('Articles saved successfully');
             return true;
         } catch (error) {
+            if (error.message === 'Maximum retry attempts reached') {
+                console.error('Failed to save articles after maximum retries');
+            }
             console.error('Error saving articles:', error);
             throw error;
         }
@@ -427,35 +450,30 @@ window.ArticlesManager = {
                 return dateB - dateA;
             });
 
+            // 使用文章卡片样式渲染
             container.innerHTML = articles.map(article => {
                 try {
                     return `
-                        <div class="bg-white rounded-lg shadow-md p-6 mb-4">
-                            <h3 class="text-xl font-bold mb-2">${article.title || 'Untitled'}</h3>
-                            <p class="text-gray-600 mb-2">Authors: ${article.authors || 'Unknown'}</p>
-                            <p class="text-gray-600 mb-2">Date: ${article.date || 'No date'}</p>
-                            ${article.categories && article.categories.length > 0 ? 
-                                `<p class="text-gray-600 mb-2">Categories: ${article.categories.join(', ')}</p>` : ''}
-                            <p class="text-gray-700 mb-4">${article.abstract || 'No abstract available'}</p>
-                            <div class="flex justify-between items-center">
+                        <div class="article-card">
+                            <h2 class="title-ellipsis">${article.title || 'Untitled'}</h2>
+                            <p class="authors-ellipsis">${article.authors || 'Unknown'}</p>
+                            <p class="categories-ellipsis">${article.categories ? article.categories.join(', ') : ''}</p>
+                            <p class="abstract-clamp">${article.abstract || 'No abstract available'}</p>
+                            <div class="mt-4">
                                 <a href="${article.pdfUrl}" target="_blank" 
                                    class="text-blue-600 hover:text-blue-800">
-                                    View PDF
+                                   View Article
                                 </a>
-                                ${isAdmin ? `
-                                    <button onclick="ArticlesManager.deleteArticle('${article.id}')" 
-                                        class="text-red-600 hover:text-red-800">
-                                        Delete
-                                    </button>
-                                ` : ''}
                             </div>
                         </div>
                     `;
                 } catch (error) {
-                    console.error('Error rendering article:', error);
+                    console.error('Error rendering article:', error, article);
                     return '';
                 }
             }).filter(Boolean).join('');
+            
+            console.log('Articles rendered successfully');
         } catch (error) {
             console.error('Error rendering articles:', error);
             const container = document.getElementById(containerId);
