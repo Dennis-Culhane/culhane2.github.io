@@ -37,11 +37,96 @@
     
     <!-- 初始化脚本 -->
     <script defer>
-        window.addEventListener('DOMContentLoaded', function() {
-            if (typeof initializePage === 'function') {
-                initializePage().catch(console.error);
+        // 定义初始化函数
+        async function initializeAdmin() {
+            try {
+                // 添加token保存按钮的事件监听器
+                const saveTokenBtn = document.getElementById('save-token-btn');
+                if (saveTokenBtn) {
+                    saveTokenBtn.addEventListener('click', async function() {
+                        const token = document.getElementById('github-token').value.trim();
+                        if (!token) {
+                            alert('Please enter a GitHub token');
+                            return;
+                        }
+                        try {
+                            if (await checkToken(token)) {
+                                sessionStorage.setItem('github_token', token);
+                                document.getElementById('token-input-section').classList.add('hidden');
+                                document.getElementById('main-content').classList.remove('hidden');
+                                await ArticlesManager.renderArticles();
+                            } else {
+                                alert('Invalid GitHub token. Please check your token and try again.');
+                            }
+                        } catch (error) {
+                            console.error('Error saving token:', error);
+                            alert('Failed to verify token. Please check your connection and try again.');
+                        }
+                    });
+                }
+
+                // 添加批量上传按钮的事件监听器
+                const batchUploadBtn = document.getElementById('batch-upload-btn');
+                if (batchUploadBtn) {
+                    batchUploadBtn.addEventListener('click', async function() {
+                        // ... 保持现有的批量上传代码 ...
+                    });
+                }
+
+                // 添加文件/URL切换处理
+                document.querySelectorAll('input[name="pdf-type"]').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        const fileInput = document.getElementById('pdf-file-input');
+                        const urlInput = document.getElementById('pdf-url-input');
+                        if (this.value === 'file') {
+                            fileInput.classList.remove('hidden');
+                            urlInput.classList.add('hidden');
+                            document.getElementById('pdf').required = true;
+                            document.getElementById('pdf-url').required = false;
+                        } else {
+                            fileInput.classList.add('hidden');
+                            urlInput.classList.remove('hidden');
+                            document.getElementById('pdf').required = false;
+                            document.getElementById('pdf-url').required = true;
+                        }
+                    });
+                });
+
+                // 添加表单提交处理
+                const articleForm = document.getElementById('article-form');
+                if (articleForm) {
+                    articleForm.addEventListener('submit', async function(e) {
+                        // ... 保持现有的表单提交代码 ...
+                    });
+                }
+
+                // 检查是否已有token
+                const token = sessionStorage.getItem('github_token');
+                if (token) {
+                    try {
+                        if (await checkToken(token)) {
+                            document.getElementById('token-input-section').classList.add('hidden');
+                            document.getElementById('main-content').classList.remove('hidden');
+                            await ArticlesManager.renderArticles();
+                        } else {
+                            sessionStorage.removeItem('github_token');
+                        }
+                    } catch (error) {
+                        console.error('Error during initialization:', error);
+                        sessionStorage.removeItem('github_token');
+                    }
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
             }
-        });
+        }
+
+        // 等待DOM加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => initializeAdmin());
+        } else {
+            initializeAdmin();
+        }
     </script>
     <style>
         .article-card {
