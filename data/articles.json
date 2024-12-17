@@ -70,7 +70,7 @@
   },
   {
     "id": "1734470763985",
-    "title": "Comment on James R. CohenÃÂÃÂ¢ÃÂÃÂÃÂÃÂs ÃÂÃÂ¢ÃÂÃÂÃÂÃÂAbandoned Housing: Exploring Lessons from BaltimoreÃÂÃÂ¢ÃÂÃÂÃÂÃÂ",
+    "title": "Comment on James R. CohenÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂs ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂAbandoned Housing: Exploring Lessons from BaltimoreÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ",
     "authors": "Dennis P Culhane, University of Pennslyvania",
     "date": "2001-01-01",
     "categories": [
@@ -109,7 +109,7 @@
     "categories": [
       "Homelessness Prevention and Housing Stabilization"
     ],
-    "abstract": "Existing literature suggests many victims of housing loss due to disaster need emergency shelter, and low-income individuals are at risk of becoming chronically homeless without assistance in the transition to conventional housing. In response, FEMA provides Transitional Sheltering Assistance (TSA) to victims of housing loss. However, the extent to which sheltering needs are met by TSA has not been investigated, especially among low-income households. Analyzing FEMAâs administrative data including all damaged housing units in Harris and Galveston counties (N = 283,085), we found that low-income victims of housing loss not only had greater\r\nsheltering needs but also were less likely to access TSA than their counterparts not of low-income status. When both groups were in need of shelter, the chance of obtaining TSA for low-income victims of housing loss was much lower than that for their counterparts. Our study highlights the critical sheltering needs of low-income households in a natural disaster, and advocates for a broader and more equitable distribution of TSA.",
+    "abstract": "Existing literature suggests many victims of housing loss due to disaster need emergency shelter, and low-income individuals are at risk of becoming chronically homeless without assistance in the transition to conventional housing. In response, FEMA provides Transitional Sheltering Assistance (TSA) to victims of housing loss. However, the extent to which sheltering needs are met by TSA has not been investigated, especially among low-income households. Analyzing FEMAÃ¢ÂÂs administrative data including all damaged housing units in Harris and Galveston counties (N = 283,085), we found that low-income victims of housing loss not only had greater\r\nsheltering needs but also were less likely to access TSA than their counterparts not of low-income status. When both groups were in need of shelter, the chance of obtaining TSA for low-income victims of housing loss was much lower than that for their counterparts. Our study highlights the critical sheltering needs of low-income households in a natural disaster, and advocates for a broader and more equitable distribution of TSA.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/273/"
   },
   {
@@ -120,7 +120,18 @@
     "categories": [
       "Housing Vacancy and Abandonment"
     ],
-    "abstract": "Landlord abandonment of rental housing has affected many American cities since the 1960’s. Because of data limitations, there have been few empirical analyses of the determinants of housing abandonment. In this paper, we use a rich database that contains information on individual residential properties in New York City to estimate a reduced form model of owner abandonment. We model an owner’s decision to abandon his or her property as being similar to an investor’s decision to exercise a put option on a financial instrument. When required to pay delinquent taxes, a wealth-maximizing landlord has an incentive to cede ownership of his or her residential property when the value of all outstanding liens exceeds the property’s market value. Estimates from the model are used to examine whether empirical evidence supports this option model of abandonment.",
+    "abstract": "Landlord abandonment of rental housing has affected many American cities since the 1960âs. Because of data limitations, there have been few empirical analyses of the determinants of housing abandonment. In this paper, we use a rich database that contains information on individual residential properties in New York City to estimate a reduced form model of owner abandonment. We model an ownerâs decision to abandon his or her property as being similar to an investorâs decision to exercise a put option on a financial instrument. When required to pay delinquent taxes, a wealth-maximizing landlord has an incentive to cede ownership of his or her residential property when the value of all outstanding liens exceeds the propertyâs market value. Estimates from the model are used to examine whether empirical evidence supports this option model of abandonment.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/40/"
+  },
+  {
+    "id": "1734470773111",
+    "title": "Connecting the Dots: The Promise of Integrated Data Systems for Policy Analysis and Systems Reform",
+    "authors": "Dennis P Culhane",
+    "date": "2010-03-22",
+    "categories": [
+      "Integrated Administrative Databases and Community Indicator Systems; Sampling from Major Themes"
+    ],
+    "abstract": "This article explores the use of integrated administrative data systems in support of policy reform through interagency collaboration and research. The legal, ethical, scientific and economic challenges of interagency data sharing are examined. A survey of eight integrated data systems, including states, local governments and university-based efforts, explores how the developers have addressed these challenges. Some exemplary uses of the systems are provided to illustrate the range, usefulness and import of these systems for policy and program reform. Recommendations are offered for the broader adoption of these systems and for their expanded use by various stakeholders.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/90/"
   }
 ]
