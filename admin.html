@@ -674,13 +674,20 @@
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const articles = XLSX.utils.sheet_to_json(sheet);
                 
+                if (!articles || articles.length === 0) {
+                    throw new Error('No valid articles found in Excel file');
+                }
+
+                console.log('Parsed articles from Excel:', articles);
+                
                 // 上传每篇文章
                 let completed = 0;
                 for (let article of articles) {
                     progressText.textContent = `Uploading ${article.Title} (${completed + 1}/${articles.length})`;
                     
-                    if (!article.URL) {
-                        console.warn(`Article "${article.Title}" is missing URL`);
+                    // 验证必需字段
+                    if (!article.Title || !article.Authors || !article.URL) {
+                        console.warn(`Article is missing required fields:`, article);
                         continue;
                     }
                     
@@ -688,14 +695,22 @@
                     const articleData = {
                         title: article.Title,
                         authors: article.Authors,
-                        date: formatExcelDate(article.Date),
+                        date: article.Date ? formatExcelDate(article.Date) : new Date().toISOString().split('T')[0],
                         categories: article.Categories ? article.Categories.split(',').map(c => c.trim()) : [],
-                        abstract: article.Abstract,
+                        abstract: article.Abstract || '',
                         pdfUrl: article.URL
                     };
                     
+                    console.log('Uploading article:', articleData);
+                    
                     // 上传文章
-                    await ArticlesManager.addArticle(articleData);
+                    try {
+                        await ArticlesManager.addArticle(articleData);
+                        console.log('Successfully uploaded article:', articleData.title);
+                    } catch (error) {
+                        console.error(`Failed to upload article "${articleData.title}":`, error);
+                        continue;
+                    }
                     
                     // 更新进度
                     completed++;
@@ -703,10 +718,14 @@
                     progressBar.style.width = `${progress}%`;
                 }
                 
+                if (completed === 0) {
+                    throw new Error('No articles were successfully uploaded');
+                }
+                
                 // 完成上传
                 progressText.textContent = 'Upload complete!';
                 await renderArticlesList();
-                alert('Batch upload completed successfully!');
+                alert(`Successfully uploaded ${completed} out of ${articles.length} articles`);
                 
                 // 重置表单
                 document.getElementById('excel-file').value = '';
@@ -715,6 +734,8 @@
             } catch (error) {
                 console.error('Batch upload failed:', error);
                 alert('Batch upload failed: ' + error.message);
+                // 隐藏进度条
+                document.getElementById('upload-progress').classList.add('hidden');
             }
         });
 
@@ -740,14 +761,23 @@
         function formatExcelDate(excelDate) {
             if (!excelDate) return '';
             
-            // 如果已经是字符串格式，直接返回
-            if (typeof excelDate === 'string') {
-                return excelDate;
+            // 尝试解析日期字符串
+            const date = new Date(excelDate);
+            if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
             }
             
             // 将Excel日期数字转换为JavaScript日期
-            const date = new Date((excelDate - 25569) * 86400 * 1000);
-            return date.toISOString().split('T')[0];
+            try {
+                const date = new Date((excelDate - 25569) * 86400 * 1000);
+                if (!isNaN(date.getTime())) {
+                    return date.toISOString().split('T')[0];
+                }
+                return new Date().toISOString().split('T')[0];
+            } catch (error) {
+                console.warn('Failed to parse Excel date:', excelDate);
+                return new Date().toISOString().split('T')[0];
+            }
         }
 
         // 添加文件/URL切换处理

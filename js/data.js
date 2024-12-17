@@ -229,7 +229,7 @@ window.ArticlesManager = {
     },
 
     // Add new article (需要 token)
-    async addArticle(articleData, pdfFile) {
+    async addArticle(articleData) {
         try {
             const token = window.getGitHubToken();
             if (!token) {
@@ -240,8 +240,8 @@ window.ArticlesManager = {
                 throw new Error('Article title and authors are required');
             }
 
-            if (!pdfFile) {
-                throw new Error('PDF file is required');
+            if (!articleData.pdfUrl) {
+                throw new Error('PDF URL is required');
             }
 
             // Get current articles first
@@ -254,10 +254,6 @@ window.ArticlesManager = {
                 articles = [];
             }
 
-            // Upload PDF
-            const pdfUrl = await this.uploadPDF(pdfFile);
-            console.log('PDF uploaded, URL:', pdfUrl);
-
             // Create new article
             const newArticle = {
                 id: Date.now().toString(),
@@ -266,8 +262,7 @@ window.ArticlesManager = {
                 date: articleData.date || new Date().toISOString().split('T')[0],
                 categories: Array.isArray(articleData.categories) ? articleData.categories.filter(Boolean) : [],
                 abstract: articleData.abstract ? articleData.abstract.trim() : '',
-                fileName: pdfFile.name,
-                pdfUrl: pdfUrl
+                pdfUrl: articleData.pdfUrl
             };
 
             console.log('New article object:', newArticle);
