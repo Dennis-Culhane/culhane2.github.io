@@ -1073,5 +1073,16 @@
     ],
     "abstract": "An increasing number of groups are demanding access to information about the physical, economic, and social conditions in their communities. In addition to researchers, community development corporations, neighborhood associations, social service agencies, and municipal agencies all are becoming consumers of quantitative data. More powerful desktop computers, sophisticated data management software, enormous data storage devices, and expanding Internet access have increased exponentially the capacity of even small organizations to handle large amounts of data. However, none of these advances guarantees that organization staff will be able to make sense of these mountains of data. Perhaps more important, the advances do not enhance access to the most useful types of data that frequently reside behind municipal agency firewalls and layers of bureaucratic red tape. The growing demand for small-area administrative data in useful formats makes essential the development of new tools to support a wide range of community change efforts.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/9/"
+  },
+  {
+    "id": "1734948119312",
+    "title": "Introduction to Data Sharing and Integration",
+    "authors": "Adelia Jenkins, University of Pennsylvania",
+    "date": "2020-05-01",
+    "categories": [
+      "Integrated Administrative Databases and Community Indicator Systems"
+    ],
+    "abstract": "This Introduction to Data Sharing & Integration was created by Actionable Intelligence for Social Policy (AISP) as a primer on the basics of using, sharing, and integrating administrative data. Administrative dataare data collected during the routine process of administering programs, but can also be repurposed to support evaluation, analysis, and research. This resource is designed to help partnerships, collaboratives, agencies, and community initiatives enter into that process of repurposing administrative data thoughtfully and of building the capacity to do so routinely with strong governance in place. We generally refer to these efforts as integrated data systems (IDS), but they have other names, including data hubs, data collaboratives, and data intermediaries.Whatever they are called, all efforts that seek to leverage shared data to improve individual and community outcomes will likely face common ethical, relational, legal, and technical considerations. This introductory document outlines some of those considerations and provides recommended resources and references for those interested in diving deeper.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/268/"
   }
 ]
