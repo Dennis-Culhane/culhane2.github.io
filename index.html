@@ -150,6 +150,19 @@
             background-color: #E5E7EB;
             color: #374151;
         }
+        /* 最新文章卡片的特殊样式 */
+        #latest-articles .article-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #latest-articles .article-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #latest-articles .title-ellipsis {
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -207,8 +220,19 @@
     <!-- Articles Section -->
     <section id="articles" class="py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Latest Articles Section -->
+            <div class="mb-12">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Top 20 Latest Articles</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="latest-articles">
+                    <!-- Latest articles will be displayed here -->
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 my-8"></div>
+
+            <!-- Existing Articles Section -->
             <div class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">Research Articles</h2>
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">All Research Articles</h2>
                 
                 <!-- Categories Filter -->
                 <div class="mb-6">
@@ -234,7 +258,7 @@
         </div>
     </section>
 
-    <!-- 在 body 标签结束前添加模态框 -->
+    <!-- 在 body 标签结束前添加模态�� -->
     <div id="article-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden flex items-center justify-center">
         <div class="bg-white rounded-lg max-w-5xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-4">
@@ -275,6 +299,9 @@
             allArticles = await ArticlesManager.getArticles();
             console.log('Loaded articles:', allArticles);
             
+            // 渲染最新文章
+            renderLatestArticles();
+            
             // 提取所有唯一的分类
             const categories = new Set();
             allArticles.forEach(article => {
@@ -301,6 +328,39 @@
 
             // 初始渲染文章
             filterAndRenderArticles();
+        }
+
+        // 添加最新文章渲染函数
+        function renderLatestArticles() {
+            const latestContainer = document.getElementById('latest-articles');
+            
+            // 按日期排序并获取前20篇
+            const latestArticles = [...allArticles]
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 20);
+
+            // 使用不同的样式渲染最新文章
+            latestContainer.innerHTML = latestArticles.map(article => `
+                <div class="article-card border-l-4 border-blue-500">
+                    <div class="flex items-start">
+                        <div class="flex-1">
+                            <h3 class="title-ellipsis cursor-pointer hover:text-blue-600" 
+                                onclick="showArticleDetail(${JSON.stringify(article).replace(/"/g, '&quot;')})">
+                                ${cleanText(article.title)}
+                            </h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                ${new Date(article.date).toLocaleDateString()}
+                            </p>
+                            <p class="authors-ellipsis mt-2">${cleanText(article.authors)}</p>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                ${article.categories.map(cat => `
+                                    <span class="article-category">${cat}</span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
         // 切换分类过滤器
@@ -338,7 +398,7 @@
                 );
             }
 
-            // 渲染过滤后的文章
+            // 渲染过滤后的文章（只更新主文章列表，不影响最新文章区域）
             const container = document.getElementById('articles-list');
             if (filteredArticles.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-center">No articles found matching your criteria.</p>';

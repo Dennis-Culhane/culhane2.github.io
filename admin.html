@@ -358,12 +358,11 @@
                 const formData = new FormData(this);
                 let pdfUrl = '';
                 
-                // 根据选择的类型获取PDF URL
+                // 处理PDF URL
                 const pdfType = document.querySelector('input[name="pdf-type"]:checked').value;
                 if (pdfType === 'file') {
                     const pdfFile = formData.get('pdf');
                     if (pdfFile.size > 0) {
-                        // 上传文件并获取URL
                         pdfUrl = await ArticlesManager.uploadPDF(pdfFile);
                     }
                 } else {
@@ -377,24 +376,26 @@
                     throw new Error('Please provide a file or URL');
                 }
                 
+                // 处理分类
+                const categories = formData.get('categories')
+                    ? formData.get('categories')
+                        .split(/[,;|]/)
+                        .map(cat => cat.trim())
+                        .filter(Boolean)
+                    : [];
+                
                 const articleData = {
                     title: cleanText(formData.get('title')),
                     authors: cleanText(formData.get('authors')),
                     date: formData.get('date'),
-                    categories: formData.get('categories') ? cleanText(formData.get('categories')).split(',').map(c => c.trim()) : [],
+                    categories: categories,
                     abstract: cleanText(formData.get('abstract') || ''),
                     pdfUrl: pdfUrl
                 };
                 
-                // 添加文章
                 await ArticlesManager.addArticle(articleData);
-                
-                // 清除表单
                 this.reset();
-                
-                // 刷新文章列表
                 await renderArticlesList();
-                
                 alert('Article added successfully!');
             } catch (error) {
                 console.error('Error saving article:', error);
@@ -455,7 +456,7 @@
                     return;
                 }
 
-                // 添加批量操作按钮
+                // 添加批���操作按钮
                 const batchOperationsHtml = `
                     <div class="mb-4 flex justify-between items-center">
                         <div>
@@ -688,15 +689,27 @@
                     throw new Error('No valid articles found in Excel file');
                 }
 
-                // 标准化列名
-                const articles = rawArticles.map(row => ({
-                    Title: row.Title || row.title || '',
-                    Authors: row.Authors || row.authors || '',
-                    Date: row.Date || row.date || '',
-                    Categories: row.Categories || row.categories || '',
-                    Abstract: row.Abstract || row.abstract || '',
-                    URL: row.URL || row.url || row.Url || ''
-                }));
+                // 标准化列名并处理分类
+                const articles = rawArticles.map(row => {
+                    // 处理分类：支持多种分隔符
+                    let categories = [];
+                    if (row.Categories || row.categories) {
+                        const categoryStr = (row.Categories || row.categories).toString();
+                        categories = categoryStr
+                            .split(/[,;|]/)  // 支持逗号、分号、竖线分隔
+                            .map(cat => cat.trim())
+                            .filter(Boolean);  // 移除空值
+                    }
+
+                    return {
+                        Title: row.Title || row.title || '',
+                        Authors: row.Authors || row.authors || '',
+                        Date: row.Date || row.date || '',
+                        Categories: categories,
+                        Abstract: row.Abstract || row.abstract || '',
+                        URL: row.URL || row.url || row.Url || ''
+                    };
+                });
 
                 console.log('Normalized articles:', articles);
                 
@@ -714,13 +727,11 @@
                             if (i === maxRetries - 1) {
                                 throw error;
                             }
-                            // 在重试之前等待更长时间
                             await delay((i + 1) * 2000);
                         }
                     }
                 }
 
-                // 修改上传逻辑
                 let completed = 0;
                 let failed = 0;
                 const failedArticles = [];
@@ -728,7 +739,6 @@
                 for (let article of articles) {
                     progressText.textContent = `Uploading ${article.Title} (${completed + 1}/${articles.length})`;
                     
-                    // 验证必需字段
                     if (!article.Title || !article.Authors || !article.URL) {
                         console.warn(`Skipping article due to missing required fields:`, article);
                         failed++;
@@ -743,11 +753,7 @@
                         title: cleanText(article.Title),
                         authors: cleanText(article.Authors),
                         date: article.Date ? formatExcelDate(article.Date) : new Date().toISOString().split('T')[0],
-                        categories: article.Categories ? 
-                            cleanText(article.Categories)
-                                .split(/[,;|]/)  // 支持多种分隔符
-                                .map(c => c.trim())
-                                .filter(Boolean) : [],
+                        categories: article.Categories,  // 已经处理过的分类数组
                         abstract: cleanText(article.Abstract || ''),
                         pdfUrl: article.URL
                     };
@@ -756,7 +762,6 @@
                         await uploadWithRetry(articleData);
                         console.log('Successfully uploaded article:', articleData.title);
                         completed++;
-                        // 每上传一篇文章后等待一小段时间
                         await delay(1000);
                     } catch (error) {
                         console.error(`Failed to upload article "${articleData.title}":`, error);
@@ -771,7 +776,6 @@
                     progressBar.style.width = `${progress}%`;
                 }
                 
-                // 完成上传后显示详细结果
                 const resultMessage = `Upload complete!\n\n` +
                     `Successfully uploaded: ${completed} articles\n` +
                     `Failed: ${failed} articles\n\n` +
@@ -783,7 +787,6 @@
                 await ArticlesManager.renderArticles();
                 alert(resultMessage);
                 
-                // 重置表单
                 document.getElementById('excel-file').value = '';
                 progressDiv.classList.add('hidden');
                 
