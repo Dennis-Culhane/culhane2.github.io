@@ -378,11 +378,11 @@
                 }
                 
                 const articleData = {
-                    title: formData.get('title'),
-                    authors: formData.get('authors'),
+                    title: cleanText(formData.get('title')),
+                    authors: cleanText(formData.get('authors')),
                     date: formData.get('date'),
-                    categories: formData.get('categories') ? formData.get('categories').split(',').map(c => c.trim()) : [],
-                    abstract: formData.get('abstract'),
+                    categories: formData.get('categories') ? cleanText(formData.get('categories')).split(',').map(c => c.trim()) : [],
+                    abstract: cleanText(formData.get('abstract') || ''),
                     pdfUrl: pdfUrl
                 };
                 
@@ -428,19 +428,14 @@
             }
         });
 
-        // 添加文本清理函数
+        // 修改cleanText函数，增强文本清理能力
         function cleanText(text) {
             if (!text) return '';
-            return text
-                .replace(/Ã/g, '')
-                .replace(/Â/g, '')
-                .replace(/â/g, '')
-                .replace(/€/g, '')
-                .replace(/™/g, '')
-                .replace(/\u0080-\u00FF/g, '')
-                .replace(/[\uFFFD\uFFFE\uFFFF]/g, '')
-                .replace(/[^\x00-\x7F]/g, '')
-                .replace(/\s+/g, ' ')
+            return String(text)  // 确保输入是字符串
+                .replace(/[\u0080-\u00ff]/g, '') // 移除扩展ASCII字符
+                .replace(/[\u0100-\uffff]/g, '') // 移除其他Unicode字符
+                .replace(/[^\x20-\x7E]/g, '') // 只保留基本ASCII可打印字符
+                .replace(/\s+/g, ' ') // 将多个空格替换为单个空格
                 .trim();
         }
 
@@ -626,7 +621,7 @@
             document.getElementById('edit-form').reset();
         }
 
-        // 添加编辑表单提交处理
+        // 修改编辑表单提交处理部分
         document.getElementById('edit-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -635,11 +630,11 @@
                 const articleId = document.getElementById('edit-id').value;
                 const articleData = {
                     id: articleId,
-                    title: formData.get('title'),
-                    authors: formData.get('authors'),
+                    title: cleanText(formData.get('title')),
+                    authors: cleanText(formData.get('authors')),
                     date: formData.get('date'),
-                    categories: formData.get('categories') ? formData.get('categories').split(',').map(c => c.trim()).filter(Boolean) : [],
-                    abstract: formData.get('abstract')
+                    categories: formData.get('categories') ? cleanText(formData.get('categories')).split(',').map(c => c.trim()).filter(Boolean) : [],
+                    abstract: cleanText(formData.get('abstract') || '')
                 };
                 
                 const pdfFile = formData.get('pdf');
@@ -668,7 +663,7 @@
             }
         });
 
-        // 批量上传功能
+        // 修改批量上传部分的代码
         document.getElementById('batch-upload-btn').addEventListener('click', async function() {
             const excelFile = document.getElementById('excel-file').files[0];
             
@@ -678,7 +673,6 @@
             }
 
             try {
-                // 显示进度条
                 const progressDiv = document.getElementById('upload-progress');
                 const progressBar = document.getElementById('progress-bar');
                 const progressText = document.getElementById('progress-text');
@@ -705,53 +699,84 @@
 
                 console.log('Normalized articles:', articles);
                 
-                // 上传每篇文章
+                // 添加延时函数
+                const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+                
+                // 添加重试函数
+                async function uploadWithRetry(articleData, maxRetries = 3) {
+                    for (let i = 0; i < maxRetries; i++) {
+                        try {
+                            await ArticlesManager.addArticle(articleData);
+                            return true;
+                        } catch (error) {
+                            console.warn(`Attempt ${i + 1} failed for article "${articleData.title}":`, error);
+                            if (i === maxRetries - 1) {
+                                throw error;
+                            }
+                            // 在重试之前等待更长时间
+                            await delay((i + 1) * 2000);
+                        }
+                    }
+                }
+
+                // 修改上传逻辑
                 let completed = 0;
+                let failed = 0;
+                const failedArticles = [];
+
                 for (let article of articles) {
                     progressText.textContent = `Uploading ${article.Title} (${completed + 1}/${articles.length})`;
                     
                     // 验证必需字段
                     if (!article.Title || !article.Authors || !article.URL) {
                         console.warn(`Skipping article due to missing required fields:`, article);
-                        console.warn(`Required fields: Title, Authors, URL`);
+                        failed++;
+                        failedArticles.push({
+                            title: article.Title,
+                            reason: 'Missing required fields'
+                        });
                         continue;
                     }
                     
-                    // 准备文章数据
                     const articleData = {
-                        title: article.Title,
-                        authors: article.Authors,
+                        title: cleanText(article.Title),
+                        authors: cleanText(article.Authors),
                         date: article.Date ? formatExcelDate(article.Date) : new Date().toISOString().split('T')[0],
-                        categories: article.Categories ? article.Categories.split(',').map(c => c.trim()) : [],
-                        abstract: article.Abstract || '',
+                        categories: article.Categories ? cleanText(article.Categories).split(',').map(c => c.trim()) : [],
+                        abstract: cleanText(article.Abstract || ''),
                         pdfUrl: article.URL
                     };
                     
-                    console.log('Uploading article:', articleData);
-                    
-                    // 上传文章
                     try {
-                        await ArticlesManager.addArticle(articleData);
+                        await uploadWithRetry(articleData);
                         console.log('Successfully uploaded article:', articleData.title);
-                        // 更新进度
                         completed++;
-                        const progress = (completed / articles.length) * 100;
-                        progressBar.style.width = `${progress}%`;
+                        // 每上传一篇文章后等待一小段时间
+                        await delay(1000);
                     } catch (error) {
                         console.error(`Failed to upload article "${articleData.title}":`, error);
-                        alert(`Failed to upload article "${articleData.title}": ${error.message}`);
-                        continue;
+                        failed++;
+                        failedArticles.push({
+                            title: articleData.title,
+                            reason: error.message
+                        });
                     }
+                    
+                    const progress = (completed / articles.length) * 100;
+                    progressBar.style.width = `${progress}%`;
                 }
                 
-                if (completed === 0) {
-                    throw new Error('No articles were successfully uploaded');
-                }
+                // 完成上传后显示详细结果
+                const resultMessage = `Upload complete!\n\n` +
+                    `Successfully uploaded: ${completed} articles\n` +
+                    `Failed: ${failed} articles\n\n` +
+                    (failedArticles.length > 0 ? 
+                        `Failed articles:\n${failedArticles.map(a => `- ${a.title}: ${a.reason}`).join('\n')}` : 
+                        '');
                 
-                // 完成上传
                 progressText.textContent = 'Upload complete!';
                 await ArticlesManager.renderArticles();
-                alert(`Successfully uploaded ${completed} out of ${articles.length} articles`);
+                alert(resultMessage);
                 
                 // 重置表单
                 document.getElementById('excel-file').value = '';
@@ -760,7 +785,6 @@
             } catch (error) {
                 console.error('Batch upload failed:', error);
                 alert('Batch upload failed: ' + error.message);
-                // 隐藏进度条
                 document.getElementById('upload-progress').classList.add('hidden');
             }
         });
