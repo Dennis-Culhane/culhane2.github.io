@@ -139,7 +139,7 @@ window.ArticlesManager = {
 
             // Prepare request body
             const body = {
-                message: 'Update articles data',
+                message: `[skip ci] Batch update articles`,
                 content: base64Content,
                 branch: window.GITHUB_CONFIG.BRANCH
             };
@@ -326,13 +326,26 @@ window.ArticlesManager = {
                 articles = [];
             }
 
-            // Create new article
+            // 处理 categories
+            let categories = [];
+            if (articleData.categories) {
+                if (Array.isArray(articleData.categories)) {
+                    categories = articleData.categories;
+                } else if (typeof articleData.categories === 'string') {
+                    // 处理多种分隔符
+                    categories = articleData.categories
+                        .split(/[,;|]/)  // 支持逗号、分号、竖线分隔
+                        .map(cat => cat.trim())
+                        .filter(Boolean);  // 移除空值
+                }
+            }
+
             const newArticle = {
                 id: Date.now().toString(),
                 title: articleData.title.trim(),
                 authors: articleData.authors.trim(),
                 date: articleData.date || new Date().toISOString().split('T')[0],
-                categories: Array.isArray(articleData.categories) ? articleData.categories.filter(Boolean) : [],
+                categories: categories,
                 abstract: articleData.abstract ? articleData.abstract.trim() : '',
                 pdfUrl: articleData.pdfUrl.trim()
             };
@@ -399,7 +412,7 @@ window.ArticlesManager = {
                                 'Accept': 'application/vnd.github.v3+json'
                             },
                             body: JSON.stringify({
-                                message: `Delete PDF: ${article.fileName}`,
+                                message: `[skip ci] Delete article ${id}`,
                                 sha: pdfData.sha,
                                 branch: window.GITHUB_CONFIG.BRANCH
                             })
@@ -485,10 +498,116 @@ window.ArticlesManager = {
                 container.innerHTML = `<p class="text-red-500 text-center">Error loading articles: ${error.message}</p>`;
             }
         }
+    },
+
+    async updateArticle(articleData, pdfFile = null) {
+        const token = sessionStorage.getItem('github_token');
+        if (!token) {
+            throw new Error('GitHub token not found');
+        }
+
+        try {
+            // 获取现有文章
+            const articles = await this.getArticles();
+            const index = articles.findIndex(a => String(a.id) === String(articleData.id));
+            
+            if (index === -1) {
+                throw new Error('Article not found');
+            }
+
+            // 如果有新的PDF文件
+            if (pdfFile && pdfFile.size > 0) {
+                const pdfUrl = await this.uploadPDF(pdfFile);
+                articleData.pdfUrl = pdfUrl;
+            } else {
+                // 保持原有的 pdfUrl
+                articleData.pdfUrl = articles[index].pdfUrl;
+            }
+
+            // 更新文章数据
+            articles[index] = {
+                ...articles[index],
+                ...articleData,
+                lastModified: new Date().toISOString()
+            };
+
+            // 获取现有文件的 SHA
+            const response = await fetch(`${window.config.apiBaseUrl}/contents/${window.config.articlesPath}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            const fileInfo = await response.json();
+            const sha = fileInfo.sha;
+
+            // 更新文件
+            const content = btoa(JSON.stringify(articles, null, 2));
+            await fetch(`${window.config.apiBaseUrl}/contents/${window.config.articlesPath}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify({
+                    message: `[skip ci] Update: ${articleData.title.substring(0, 50)}...`,
+                    content: content,
+                    sha: sha,
+                    branch: window.config.branch
+                })
+            });
+
+            return articles[index];
+        } catch (error) {
+            console.error('Error updating article:', error);
+            throw new Error('Failed to update article: ' + error.message);
+        }
+    },
+
+    async batchSaveArticles(articles, operation = 'update') {
+        const token = sessionStorage.getItem('github_token');
+        if (!token) {
+            throw new Error('GitHub token not found');
+        }
+
+        try {
+            // 获取现有文件的 SHA
+            const response = await fetch(`${window.config.apiBaseUrl}/contents/${window.config.articlesPath}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            const fileInfo = await response.json();
+            const sha = fileInfo.sha;
+
+            // 更新文件
+            const content = btoa(JSON.stringify(articles, null, 2));
+            await fetch(`${window.config.apiBaseUrl}/contents/${window.config.articlesPath}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify({
+                    message: `[skip ci] Batch ${operation} articles`,
+                    content: content,
+                    sha: sha,
+                    branch: window.config.branch
+                })
+            });
+
+            return articles;
+        } catch (error) {
+            console.error('Error in batch operation:', error);
+            throw new Error('Failed to perform batch operation: ' + error.message);
+        }
     }
 };
 
-// 验��token是否有效
+// 验证token是否有效
 async function checkToken(token) {
     try {
         if (!token || typeof token !== 'string') {

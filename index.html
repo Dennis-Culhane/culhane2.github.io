@@ -123,6 +123,33 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        .category-tag {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .category-tag:hover {
+            opacity: 0.8;
+        }
+        .category-tag.active {
+            background-color: #2563EB;
+            color: white;
+        }
+        .category-tag.inactive {
+            background-color: #E5E7EB;
+            color: #374151;
+        }
+        .article-category {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            margin: 0.25rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            background-color: #E5E7EB;
+            color: #374151;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">

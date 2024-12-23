@@ -743,7 +743,11 @@
                         title: cleanText(article.Title),
                         authors: cleanText(article.Authors),
                         date: article.Date ? formatExcelDate(article.Date) : new Date().toISOString().split('T')[0],
-                        categories: article.Categories ? cleanText(article.Categories).split(',').map(c => c.trim()) : [],
+                        categories: article.Categories ? 
+                            cleanText(article.Categories)
+                                .split(/[,;|]/)  // 支持多种分隔符
+                                .map(c => c.trim())
+                                .filter(Boolean) : [],
                         abstract: cleanText(article.Abstract || ''),
                         pdfUrl: article.URL
                     };
