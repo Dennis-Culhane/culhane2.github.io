@@ -15,19 +15,20 @@
         window.GITHUB_CONFIG = {
             REPO_OWNER: 'Dennis-Culhane',
             REPO_NAME: 'culhane2.github.io',
-            BRANCH: 'main',
-            RAW_CONTENT_URL: 'https://raw.githubusercontent.com'
+            BRANCH: 'main'
         };
         
         // 配置对象
         window.config = {
-            // 文件路径
+            apiBaseUrl: `https://api.github.com/repos/${window.GITHUB_CONFIG.REPO_OWNER}/${window.GITHUB_CONFIG.REPO_NAME}`,
+            rawBaseUrl: `https://raw.githubusercontent.com/${window.GITHUB_CONFIG.REPO_OWNER}/${window.GITHUB_CONFIG.REPO_NAME}/${window.GITHUB_CONFIG.BRANCH}`,
+            branch: window.GITHUB_CONFIG.BRANCH,
             articlesPath: 'data/articles.json',
             pdfStoragePath: 'papers/',
         
             // 获取文章数据的URL
             getArticlesUrl() {
-                return `${window.GITHUB_CONFIG.RAW_CONTENT_URL}/${window.GITHUB_CONFIG.REPO_OWNER}/${window.GITHUB_CONFIG.REPO_NAME}/${window.GITHUB_CONFIG.BRANCH}/${this.articlesPath}`;
+                return `${this.rawBaseUrl}/${this.articlesPath}`;
             }
         };
     </script>
@@ -341,6 +342,11 @@
                 }
                 
                 allArticles = await response.json();
+                if (!Array.isArray(allArticles)) {
+                    console.error('Invalid articles data:', allArticles);
+                    allArticles = [];
+                }
+                
                 console.log('Loaded articles:', allArticles);
                 
                 // 渲染最新文章
@@ -356,26 +362,28 @@
 
                 // 渲染分类过滤器
                 const filterContainer = document.getElementById('category-filters');
-                filterContainer.innerHTML = Array.from(categories).map(category => `
-                    <button class="category-tag inactive" data-category="${category}">
-                        ${category}
-                    </button>
-                `).join('');
+                if (filterContainer) {
+                    filterContainer.innerHTML = Array.from(categories).map(category => `
+                        <button class="category-tag inactive" data-category="${category}">
+                            ${category}
+                        </button>
+                    `).join('');
 
-                // 添加分类点击事件
-                document.querySelectorAll('.category-tag').forEach(button => {
-                    button.addEventListener('click', function() {
-                        const category = this.dataset.category;
-                        if (this.classList.contains('active')) {
-                            this.classList.replace('active', 'inactive');
-                            activeCategories.delete(category);
-                        } else {
-                            this.classList.replace('inactive', 'active');
-                            activeCategories.add(category);
-                        }
-                        filterAndRenderArticles();
+                    // 添加分类点击事件
+                    document.querySelectorAll('.category-tag').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const category = this.dataset.category;
+                            if (this.classList.contains('active')) {
+                                this.classList.replace('active', 'inactive');
+                                activeCategories.delete(category);
+                            } else {
+                                this.classList.replace('inactive', 'active');
+                                activeCategories.add(category);
+                            }
+                            filterAndRenderArticles();
+                        });
                     });
-                });
+                }
 
                 // 设置搜索监听器
                 const searchInput = document.getElementById('search');
