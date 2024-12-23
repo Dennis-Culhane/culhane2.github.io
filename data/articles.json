@@ -1,17 +1,5 @@
 [
   {
-    "id": "1734967649637",
-    "title": "test 1",
-    "authors": "aa",
-    "date": "2024-12-23",
-    "categories": [
-      "Publication",
-      "read"
-    ],
-    "abstract": "aa",
-    "pdfUrl": "https://raw.githubusercontent.com/Dennis-Culhane/culhane2.github.io/main/papers/Spring%202025%20Month-by-Month%20Planner.pdf"
-  },
-  {
     "id": "1734967980661",
     "title": "Actionable Intelligence: Using Integrated Data Systems to Achieve a More Effective, Efficient, and Ethical Government",
     "authors": "John Fantuzzo, University of Pennsylvania",
