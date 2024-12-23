@@ -346,5 +346,16 @@
     ],
     "abstract": "Previous studies that quantify the relationship between homeless rates and features of a community typically assume a global linear relationship. This linear model assumption precludes the possibility of inflection points in homeless rates - thresholds in quantifiable metrics of a community which, once breached, are associated with large increases in homelessness. In this paper, we identifying points of structural change in the relationship between homeless rates and community-level measures of housing affordability and extreme poverty. We develop a Dirichlet process mixture model that allows clusters of communities with similar features to exhibit common patterns of variation in homeless rates. A main finding of the study is that the expected homeless rate in a community increases sharply once median rental costs exceed 32% of median income, providing empirical evidence for the widely used definition of a housing cost burden at 30% of income. The Dirichlet process model also generates clusters that share common characteristics and exhibit distinct geographic patterns - yielding insight into the homelessness and housing affordability crises in large metropolitan areas on both coasts of the United States.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/228/"
+  },
+  {
+    "id": "1734969909696",
+    "title": "Philadelphia Eligible Metropolitan Area AIDS Housing Needs Assessment: 1997-2001",
+    "authors": "Kimberly Acquaviva, University of PennsylvaniaDennis P Culhane, University of PennsylvaniaEllen AlpertDavid Fair",
+    "date": "1996-08-01",
+    "categories": [
+      "Homelessness and HIV/AIDS"
+    ],
+    "abstract": "This report describes the results of a survey of people in Philadelphia with HIV/AIDS regarding their current and projected housing needs.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/110/"
   }
 ]
