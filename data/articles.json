@@ -2512,5 +2512,16 @@
     ],
     "abstract": "A web-based tool for creating maps, tables, charts and neighoborhood statistical profiles for Palm Beach County, Florida.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/49/"
+  },
+  {
+    "id": "1734948623393",
+    "title": "Philadelphia Crimebase",
+    "authors": "Dennis P Culhane, University of Pennsylvania",
+    "date": "2000-01-01",
+    "categories": [
+      "Integrated Administrative Databases and Community Indicator Systems"
+    ],
+    "abstract": "A web-based tool for creating maps, tables, charts and statistical profiles of Philadelphia's neighborhoods using crime incident data from the Philadelphia Police Department.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/44/"
   }
 ]
