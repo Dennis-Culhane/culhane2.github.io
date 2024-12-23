@@ -392,5 +392,17 @@
     ],
     "abstract": "N/A",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/106/"
+  },
+  {
+    "id": "1734969920854",
+    "title": "Predictive Risk Modeling to Identify Homeless Clients at Risk for Prioritizing Services Using Routinely Collected Data",
+    "authors": "Chamari I Kithulgoda, Aukland University of TechnologyRhema Vaithianathan, Aukland University of TechnologyDennis P Culhane, University of Pennsylvania",
+    "date": "2022-01-01",
+    "categories": [
+      "Homelessness Management Information Systems and the Policy Uses of Administrative Data",
+      "Homelessness Prevention and Housing Stabilization"
+    ],
+    "abstract": "For most homelessness service providers, the number of clients who are eligible for long-term housing outstrips the availability.This study uses a cohort of housing assessments taken from a mid-size county in the US and machine learning methods to train a Predictive Risk Model (PRM) that identifies clients who would experience multiple adversities in the future. The PRM outperforms the Vulnerability Index-Service Prioritization Decision Assistance Tool (VI-SPDAT) in flagging clients at the greatest risk of adversities. The proposed method can be readily used by any Continuum of Care (CoC) that holds electronic housing assessments and service records.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/266/"
   }
 ]
