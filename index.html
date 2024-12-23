@@ -194,7 +194,17 @@
                          class="rounded-lg shadow-lg">
                 </div>
                 <div class="lg:w-2/3 lg:pl-12 mt-8 lg:mt-0">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-4">Dennis P. Culhane, Ph.D.</h2>
+                    <div class="flex justify-between items-start">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-4">Dennis P. Culhane, Ph.D.</h2>
+                        <button id="follow-btn" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Follow
+                        </button>
+                    </div>
                     <p class="text-xl text-gray-600 mb-6">
                         Dana and Andrew Stone Chair in Social Policy
                         <br>Professor, School of Social Policy and Practice
@@ -258,7 +268,7 @@
         </div>
     </section>
 
-    <!-- 在 body 标签结束前添加模态�� -->
+    <!-- 在 body 标签结束前添加模态框 -->
     <div id="article-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden flex items-center justify-center">
         <div class="bg-white rounded-lg max-w-5xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-4">
@@ -287,6 +297,34 @@
         </div>
     </div>
 
+    <!-- 添加 follow 模态框 -->
+    <div id="follow-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-start mb-4">
+                <h2 class="text-xl font-bold text-gray-900">Subscribe to Updates</h2>
+                <button onclick="closeFollowModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <p class="text-gray-600 mb-4">
+                Enter your email address to receive notifications when new articles are published.
+            </p>
+            <form id="follow-form" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+                    <input type="email" id="follow-email" name="email" required
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <button type="submit"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                    Subscribe
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
         // 存储所有文章和当前过滤器状态
         let allArticles = [];
@@ -295,51 +333,80 @@
 
         // 初始化页面
         async function initializePage() {
-            // 获取所有文章
-            allArticles = await ArticlesManager.getArticles();
-            console.log('Loaded articles:', allArticles);
-            
-            // 渲染最新文章
-            renderLatestArticles();
-            
-            // 提取所有唯一的分类
-            const categories = new Set();
-            allArticles.forEach(article => {
-                if (article.categories) {
-                    article.categories.forEach(category => categories.add(category));
+            try {
+                // 获取所有文章
+                const response = await fetch(window.config.getArticlesUrl());
+                if (!response.ok) {
+                    throw new Error('Failed to fetch articles');
                 }
-            });
+                
+                allArticles = await response.json();
+                console.log('Loaded articles:', allArticles);
+                
+                // 渲染最新文章
+                renderLatestArticles();
+                
+                // 提取所有唯一的分类
+                const categories = new Set();
+                allArticles.forEach(article => {
+                    if (Array.isArray(article.categories)) {
+                        article.categories.forEach(cat => categories.add(cat));
+                    }
+                });
 
-            // 渲染分类过滤器
-            const filterContainer = document.getElementById('category-filters');
-            categories.forEach(category => {
-                const button = document.createElement('button');
-                button.className = 'px-3 py-1 rounded-full border border-gray-300 text-sm hover:bg-gray-100';
-                button.textContent = category;
-                button.onclick = () => toggleCategory(category, button);
-                filterContainer.appendChild(button);
-            });
+                // 渲染分类过滤器
+                const filterContainer = document.getElementById('category-filters');
+                filterContainer.innerHTML = Array.from(categories).map(category => `
+                    <button class="category-tag inactive" data-category="${category}">
+                        ${category}
+                    </button>
+                `).join('');
 
-            // 设置搜索监听器
-            document.getElementById('search').addEventListener('input', (e) => {
-                searchTerm = e.target.value.toLowerCase();
+                // 添加分类点击事件
+                document.querySelectorAll('.category-tag').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const category = this.dataset.category;
+                        if (this.classList.contains('active')) {
+                            this.classList.replace('active', 'inactive');
+                            activeCategories.delete(category);
+                        } else {
+                            this.classList.replace('inactive', 'active');
+                            activeCategories.add(category);
+                        }
+                        filterAndRenderArticles();
+                    });
+                });
+
+                // 设置搜索监听器
+                const searchInput = document.getElementById('search');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        searchTerm = e.target.value.toLowerCase();
+                        filterAndRenderArticles();
+                    });
+                }
+
+                // 初始渲染文章列表
                 filterAndRenderArticles();
-            });
-
-            // 初始渲染文章
-            filterAndRenderArticles();
+            } catch (error) {
+                console.error('Initialization error:', error);
+                const container = document.getElementById('articles-list');
+                if (container) {
+                    container.innerHTML = `<p class="text-red-500 text-center">Error loading articles: ${error.message}</p>`;
+                }
+            }
         }
 
-        // 添加最新文章渲染函数
+        // 修改 renderLatestArticles 函数
         function renderLatestArticles() {
             const latestContainer = document.getElementById('latest-articles');
+            if (!latestContainer || !Array.isArray(allArticles)) return;
             
             // 按日期排序并获取前20篇
             const latestArticles = [...allArticles]
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .slice(0, 20);
 
-            // 使用不同的样式渲染最新文章
             latestContainer.innerHTML = latestArticles.map(article => `
                 <div class="article-card border-l-4 border-blue-500">
                     <div class="flex items-start">
@@ -353,9 +420,9 @@
                             </p>
                             <p class="authors-ellipsis mt-2">${cleanText(article.authors)}</p>
                             <div class="flex flex-wrap gap-2 mt-2">
-                                ${article.categories.map(cat => `
+                                ${Array.isArray(article.categories) ? article.categories.map(cat => `
                                     <span class="article-category">${cat}</span>
-                                `).join('')}
+                                `).join('') : ''}
                             </div>
                         </div>
                     </div>
@@ -363,28 +430,33 @@
             `).join('');
         }
 
-        // 切换分类过滤器
-        function toggleCategory(category, button) {
-            if (activeCategories.has(category)) {
-                activeCategories.delete(category);
-                button.classList.remove('bg-blue-500', 'text-white');
-                button.classList.add('bg-white', 'text-gray-700');
-            } else {
-                activeCategories.add(category);
-                button.classList.remove('bg-white', 'text-gray-700');
-                button.classList.add('bg-blue-500', 'text-white');
-            }
-            filterAndRenderArticles();
+        // 修改 renderArticle 函数
+        function renderArticle(article) {
+            return `
+                <div class="article-card">
+                    <h2 class="title-ellipsis cursor-pointer hover:text-blue-600" 
+                        onclick="showArticleDetail(${JSON.stringify(article).replace(/"/g, '&quot;')})">
+                        ${cleanText(article.title)}
+                    </h2>
+                    <p class="authors-ellipsis">${cleanText(article.authors)}</p>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        ${Array.isArray(article.categories) ? article.categories.map(cat => `
+                            <span class="article-category">${cat}</span>
+                        `).join('') : ''}
+                    </div>
+                    <p class="abstract-clamp">${cleanText(article.abstract)}</p>
+                </div>
+            `;
         }
 
-        // 过滤并渲染文章
+        // 修改 filterAndRenderArticles 函数
         function filterAndRenderArticles() {
-            let filteredArticles = allArticles;
+            let filteredArticles = [...allArticles];
 
             // 应用分类过滤
             if (activeCategories.size > 0) {
                 filteredArticles = filteredArticles.filter(article => 
-                    article.categories && 
+                    Array.isArray(article.categories) && 
                     article.categories.some(category => activeCategories.has(category))
                 );
             }
@@ -394,12 +466,16 @@
                 filteredArticles = filteredArticles.filter(article => 
                     article.title.toLowerCase().includes(searchTerm) ||
                     article.authors.toLowerCase().includes(searchTerm) ||
-                    (article.abstract && article.abstract.toLowerCase().includes(searchTerm))
+                    (article.abstract && article.abstract.toLowerCase().includes(searchTerm)) ||
+                    (Array.isArray(article.categories) && 
+                     article.categories.some(cat => cat.toLowerCase().includes(searchTerm)))
                 );
             }
 
-            // 渲染过滤后的文章（只更新主文章列表，不影响最新文章区域）
+            // 渲染过滤后的文章
             const container = document.getElementById('articles-list');
+            if (!container) return;
+
             if (filteredArticles.length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-center">No articles found matching your criteria.</p>';
                 return;
@@ -409,36 +485,6 @@
             filteredArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             container.innerHTML = filteredArticles.map(renderArticle).join('');
-        }
-
-        function renderArticle(article) {
-            // 添加文本清理函数
-            const cleanText = (text) => {
-                if (!text) return '';
-                return text
-                    .replace(/Ã/g, '')
-                    .replace(/Â/g, '')
-                    .replace(/â/g, '')
-                    .replace(/€/g, '')
-                    .replace(/™/g, '')
-                    .replace(/\u0080-\u00FF/g, '') // 移除所有扩展 ASCII 字符
-                    .replace(/[\uFFFD\uFFFE\uFFFF]/g, '')
-                    .replace(/[^\x00-\x7F]/g, '') // 移除所有非 ASCII 字符
-                    .replace(/\s+/g, ' ') // 将多个空格替换为单个空格
-                    .trim();
-            };
-
-            return `
-                <div class="article-card">
-                    <h2 class="title-ellipsis cursor-pointer hover:text-blue-600" 
-                        onclick="showArticleDetail(${JSON.stringify(article).replace(/"/g, '&quot;')})">
-                        ${cleanText(article.title)}
-                    </h2>
-                    <p class="authors-ellipsis">${cleanText(article.authors)}</p>
-                    <p class="categories-ellipsis">${article.categories.join(', ')}</p>
-                    <p class="abstract-clamp">${cleanText(article.abstract)}</p>
-                </div>
-            `;
         }
 
         // 添加显示和关闭模态框的函数
@@ -502,6 +548,39 @@
 
         // 初始化页面
         document.addEventListener('DOMContentLoaded', initializePage);
+
+        // Follow 功能相关代码
+        document.getElementById('follow-btn').addEventListener('click', function() {
+            document.getElementById('follow-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+
+        function closeFollowModal() {
+            document.getElementById('follow-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            document.getElementById('follow-form').reset();
+        }
+
+        document.getElementById('follow-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const emailInput = document.getElementById('follow-email');
+            const email = emailInput.value.trim();
+
+            try {
+                await FollowersManager.addFollower(email);
+                alert('Successfully subscribed to updates!');
+                closeFollowModal();
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+        // 点击模态框背景关闭
+        document.getElementById('follow-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeFollowModal();
+            }
+        });
     </script>
 </body>
 </html> 

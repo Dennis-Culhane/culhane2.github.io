@@ -359,6 +359,35 @@ window.ArticlesManager = {
             await this.saveArticles(articles);
             console.log('New article added successfully:', newArticle);
 
+            // 添加成功后发送邮件通知
+            try {
+                const followers = await FollowersManager.getFollowers();
+                if (followers.length > 0) {
+                    // 这里需要实现你的邮件发送逻辑
+                    // 可以使用第三方服务如 SendGrid、Mailgun 等
+                    // 或者使用自己的邮件服务器
+                    console.log('Sending notification to followers:', followers);
+                    
+                    // 示例：使用 Email.js 发送邮件
+                    for (const email of followers) {
+                        await emailjs.send(
+                            'YOUR_SERVICE_ID',
+                            'YOUR_TEMPLATE_ID',
+                            {
+                                to_email: email,
+                                article_title: articleData.title,
+                                article_authors: articleData.authors,
+                                article_url: articleData.pdfUrl
+                            },
+                            'YOUR_USER_ID'
+                        );
+                    }
+                }
+            } catch (error) {
+                console.error('Error sending notifications:', error);
+                // 继续执行，不影响文章添加
+            }
+
             return newArticle;
         } catch (error) {
             console.error('Error adding article:', error);
