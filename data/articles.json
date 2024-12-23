@@ -373,5 +373,16 @@
     ],
     "abstract": "For most homelessness service providers, the number of clients who are eligible for long-term housing outstrips the availability.This study uses a cohort of housing assessments taken from a mid-size county in the US and machine learning methods to train a Predictive Risk Model (PRM) that identifies clients who would experience multiple adversities in the future. The PRM outperforms the Vulnerability Index-Service Prioritization Decision Assistance Tool (VI-SPDAT) in flagging clients at the greatest risk of adversities. The proposed method can be readily used by any Continuum of Care (CoC) that holds electronic housing assessments and service records.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/266/"
+  },
+  {
+    "id": "1734947858314",
+    "title": "Community-Level Characteristics Associated with Variations in Rates of Homelessness Among Families and Single Adults",
+    "authors": "Jamison D Fargo",
+    "date": "2013-12-01",
+    "categories": [
+      "Structural Determinants of Homelessness; Homelessness among Families with Children; Sampling from Major Themes"
+    ],
+    "abstract": "Objectives. We modeled rates of family and single-adult homelessness in the United States in metropolitan and nonmetropolitan regions and as a function of community-level demographic, behavioral, health, economic, and safety net characteristics.Methods. We entered community-level characteristics and US Department of Housing and Urban Development point-in-time counts for a single night in January 2009 into separate mixed-effects statistical analyses that modeled homelessness rates for 4 subpopulations: families and single adults inmetropolitan and nonmetropolitan regions.Results. Community-level factors accounted for 25% to 50% of the variance in homelessness rates across models. In metropolitan regions, alcohol consumption, social support, and several economic indicators were uniquely associated with family homelessness, and drug use and homicidewere uniquely associatedwith single-adult homelessness. In nonmetropolitan regions, life expectancy, religious adherence, unemployment, and rent burden were uniquely associated with family homelessness, and health care access, crime, several economic indicators, and receipt of Supplemental Security Income were uniquely associated with single-adult homelessness.Conclusions. Considering homeless families and single adults separately enabled more precise modeling of associations between homelessness rates and community-level characteristics, indicating targets for interventions to reduce homelessness among these subpopulations.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/132/"
   }
 ]
