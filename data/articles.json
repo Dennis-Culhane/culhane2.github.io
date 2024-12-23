@@ -2208,5 +2208,17 @@
     ],
     "abstract": "Objective: To develop a screening tool to identify emergency department (ED) patients at risk of entering a homeless shelter, which could inform targeting of interventions to prevent future homelessness episodes.Data sources: Linked data from (1) ED patient baseline questionnaires and (2) citywide administrative homeless shelter database.Study design: Stakeholder-informed predictive modeling utilizing ED patient questionnaires linked with prospective shelter administrative data. The outcome was shelter entry documented in administrative data within 6 months following the baseline ED visit. Exposures were responses to questions on homelessness risk factors from baseline questionnaires.Data collection/extraction methods: Research assistants completed questionnaires with randomly sampled ED patients who were medically stable, not in police/prison custody, and spoke English or Spanish. Questionnaires were linked to administrative data using deterministic and probabilistic matching.Principal findings: Of 1993 ED patients who were not homeless at baseline, 5.6% entered a shelter in the next 6 months. A screening tool consisting of two measures of past shelter use and one of past criminal justice involvement had 83.0% sensitivity and 20.4% positive predictive value for future shelter entry.Conclusions: Our study demonstrates the potential of using cross-sector data to improve hospital initiatives to address patients' social needs.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/260/"
+  },
+  {
+    "id": "1734948517335",
+    "title": "Posthumously Assessing a Homeless Population: Services Use and Characteristics",
+    "authors": "Stephen Metraux, Ph.D., University of the Sciences",
+    "date": "2016-08-01",
+    "categories": [
+      "Homelessness Population Estimation",
+      "Demographic Composition and Trends"
+    ],
+    "abstract": "Objective: Data on services use, characteristics, and geographic distribution of homeless individuals who died inPhiladelphia from 2009 to 2011 provided perspective on assessments of the homeless population that rely on conventional counts and surveys.Methods: Data from the City of Philadelphia Medical Examiners Office were used to parse homeless decedents into three groups on the basis of use of homelessness services (known users, occasional users, and nonusers), and differences among the groups were assessed by using descriptive and multivariate methods.Results: Of 141 adult decedents, 49% made substantial use of the homelessness services system (known users), 27% made occasional use of these services (occasional users), and 24% had no record of use of homelessness services (nonusers). Compared with known users, nonusers and occasional users were less likely to have had a severe mental illness diagnosis or to have received either disability benefits or Medicaid coverage and were more likely to be white. Nonusers and occasional users were also more likely than known users to have died in outlying parts of the city.Conclusions: More conventional homeless surveys and enumerations miss a substantial portion of the homelesspopulation. Including these hidden homeless persons would alter perceptions about the composition of Philadelphias homeless population, lowering estimates of the incidence of psychiatric disability and increasing estimates of racial diversity.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/203/"
   }
 ]
