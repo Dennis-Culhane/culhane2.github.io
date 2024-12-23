@@ -1550,5 +1550,17 @@
     ],
     "abstract": "Objective: In 1992, the American Association for Partial Hospitalization initiated a national survey of partial hospitalization providers to investigate their present status (programming, staffing, and pricing), to track market trends, and to improve advocacy for appropriate utilization and reimbursement.Method: Instrument development and field testing preceded widespread distribution of the survey. From survey data, a description of child and adolescent partial hospital services based on statistical averages is reported as are analyses of program differences by length of stay and for-profit/not-for-profit status.Results: Of the 580 programs responding, 95 indicated that at least 50% of their patient population consisted of children and adolescents. Descriptive statistics on this subsample suggest continued variability in child and adolescent partial hospital programming. Program differences in referral and discharge patterns, population and programming, and utilization and funding patterns based on length of stay and profit status are presented.Conclusions: The pattern of significant program differences between acute-care and long-term child and adolescent partial hospital programs and for-profit/not-for-profit programs (along with the absence of for-profit programs treating children and adolescents in long-term programs) points to an evolving system of care.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/69/"
+  },
+  {
+    "id": "1734970657050",
+    "title": "Predicting Housing Abandonment with the Philadelphia Neighborhood Information System",
+    "authors": "Amy E Hillier, University of PennsylvaniaDennis P Culhane, University of PennslyvaniaTony E Smith, University of PennsylvaniaC. Dana Tomlin, University of Pennsylvania",
+    "date": "1970-01-01",
+    "categories": [
+      "Housing Vacancy and Abandonment",
+      "Most Downloaded"
+    ],
+    "abstract": "Several large US cities, including Chicago, Los Angeles, New York, and Philadelphia, have developed information systems to distribute property-level housing data to community organizations and municipal agencies. These early warning systems are also intended to predict which properties are at greatest risk of abandonment, but they have rarely used statistical modeling to support such forecasts. This study used logistic regression to analyze data from the Philadelphia Neighborhood Information System in order to determine which properties were most likely to become imminently dangerous. Several different characteristics of the property, including whether it was vacant, had outstanding housing code violations, and tax arrearages as well as characteristics of nearby properties were identified as significant predictors. Challenges common to the development of early warning systems - including integrating administrative data, defining abandonment, and modeling temporal and spatial data - are discussed along with policy implications for cities like Philadelphia that have thousands of vacant and abandoned properties.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/14/"
   }
 ]
