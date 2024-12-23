@@ -1,7 +1,7 @@
 [
   {
     "id": "1734945411832",
-    "title": "Comment on James R. CohenÃÂ¢ÃÂÃÂs ÃÂ¢ÃÂÃÂAbandoned Housing: Exploring Lessons from BaltimoreÃÂ¢ÃÂÃÂ",
+    "title": "Comment on James R. CohenÃÂÃÂ¢ÃÂÃÂÃÂÃÂs ÃÂÃÂ¢ÃÂÃÂÃÂÃÂAbandoned Housing: Exploring Lessons from BaltimoreÃÂÃÂ¢ÃÂÃÂÃÂÃÂ",
     "authors": "Dennis P Culhane, University of Pennslyvania",
     "date": "2001-01-01",
     "categories": [
@@ -40,7 +40,18 @@
     "categories": [
       "Homelessness Prevention and Housing Stabilization"
     ],
-    "abstract": "Existing literature suggests many victims of housing loss due to disaster need emergency shelter, and low-income individuals are at risk of becoming chronically homeless without assistance in the transition to conventional housing. In response, FEMA provides Transitional Sheltering Assistance (TSA) to victims of housing loss. However, the extent to which sheltering needs are met by TSA has not been investigated, especially among low-income households. Analyzing FEMA’s administrative data including all damaged housing units in Harris and Galveston counties (N = 283,085), we found that low-income victims of housing loss not only had greater\r\nsheltering needs but also were less likely to access TSA than their counterparts not of low-income status. When both groups were in need of shelter, the chance of obtaining TSA for low-income victims of housing loss was much lower than that for their counterparts. Our study highlights the critical sheltering needs of low-income households in a natural disaster, and advocates for a broader and more equitable distribution of TSA.",
+    "abstract": "Existing literature suggests many victims of housing loss due to disaster need emergency shelter, and low-income individuals are at risk of becoming chronically homeless without assistance in the transition to conventional housing. In response, FEMA provides Transitional Sheltering Assistance (TSA) to victims of housing loss. However, the extent to which sheltering needs are met by TSA has not been investigated, especially among low-income households. Analyzing FEMAâs administrative data including all damaged housing units in Harris and Galveston counties (N = 283,085), we found that low-income victims of housing loss not only had greater\r\nsheltering needs but also were less likely to access TSA than their counterparts not of low-income status. When both groups were in need of shelter, the chance of obtaining TSA for low-income victims of housing loss was much lower than that for their counterparts. Our study highlights the critical sheltering needs of low-income households in a natural disaster, and advocates for a broader and more equitable distribution of TSA.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/273/"
+  },
+  {
+    "id": "1734945418112",
+    "title": "An Economic Analysis of Housing Abandonment",
+    "authors": "Benjamin P Scafidi, Georgia State University",
+    "date": "1998-01-01",
+    "categories": [
+      "Housing Vacancy and Abandonment"
+    ],
+    "abstract": "Landlord abandonment of rental housing has affected many American cities since the 1960’s. Because of data limitations, there have been few empirical analyses of the determinants of housing abandonment. In this paper, we use a rich database that contains information on individual residential properties in New York City to estimate a reduced form model of owner abandonment. We model an owner’s decision to abandon his or her property as being similar to an investor’s decision to exercise a put option on a financial instrument. When required to pay delinquent taxes, a wealth-maximizing landlord has an incentive to cede ownership of his or her residential property when the value of all outstanding liens exceeds the property’s market value. Estimates from the model are used to examine whether empirical evidence supports this option model of abandonment.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/40/"
   }
 ]
