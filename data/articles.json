@@ -306,5 +306,17 @@
     ],
     "abstract": "This report responds to a motion from the Board of Supervisors to develop a plan that will house all homeless adults age 65 years and older (65+). Projections of homelessness in Los Angeles and across the country show that the number of older homeless adults is likely to growin many places more than doublingover the next several years as a result of a cohort effect described elsewhere in this report. This plan is thus very well timed, as it allows Los Angeles County to get ahead of this problem as it threatens to worsen throughout the next decade.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/241/"
+  },
+  {
+    "id": "1734947834271",
+    "title": "Inflection Points in Community-level Homeless Rates",
+    "authors": "Chris Glynn, University of New Hampshire",
+    "date": "2020-02-28",
+    "categories": [
+      "Housing Affordability and Assisted Housing Policy; Homelessness Population Estimation",
+      "Demographic Composition and Trends; Structural Determinants of Homelessness"
+    ],
+    "abstract": "Previous studies that quantify the relationship between homeless rates and features of a community typically assume a global linear relationship. This linear model assumption precludes the possibility of inflection points in homeless rates - thresholds in quantifiable metrics of a community which, once breached, are associated with large increases in homelessness. In this paper, we identifying points of structural change in the relationship between homeless rates and community-level measures of housing affordability and extreme poverty. We develop a Dirichlet process mixture model that allows clusters of communities with similar features to exhibit common patterns of variation in homeless rates. A main finding of the study is that the expected homeless rate in a community increases sharply once median rental costs exceed 32% of median income, providing empirical evidence for the widely used definition of a housing cost burden at 30% of income. The Dirichlet process model also generates clusters that share common characteristics and exhibit distinct geographic patterns - yielding insight into the homelessness and housing affordability crises in large metropolitan areas on both coasts of the United States.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/228/"
   }
 ]
