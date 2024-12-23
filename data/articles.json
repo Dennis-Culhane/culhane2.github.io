@@ -2762,5 +2762,16 @@
     ],
     "abstract": "A web-based tool for identifying properties and browsing land records in Philadelphia. Password protected.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/46/"
+  },
+  {
+    "id": "1734970937798",
+    "title": "Philadelphia Schoolbase",
+    "authors": "Dennis P Culhane, University of Pennsylvania",
+    "date": "2007-01-01",
+    "categories": [
+      "Integrated Administrative Databases and Community Indicator Systems"
+    ],
+    "abstract": "A web-based tool for creating tables, maps, charts and statistical profiles for Philadelphia's schools and neighborhoods based on data from the School District of Philadelphia. (Password protected)",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/50/"
   }
 ]
