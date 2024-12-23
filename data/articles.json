@@ -2681,5 +2681,19 @@
     ],
     "abstract": "A web-based tool for creating maps, tables, charts and statistical profiles of neighobrhood indicators in Franklin County and Columbus, Ohio.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/48/"
+  },
+  {
+    "id": "1734970916979",
+    "title": "Community-level COVID-19 Homelessness Planning & Response Dashboard",
+    "authors": "Thomas Byrne, Boston UniversityRandall Kuhn, University of California Los AngelesDan Treglia, University of PennsylvaniaKenneth Steif, University of PennsylvaniaDennis P Culhane, University of Pennsylvania",
+    "date": "2020-04-02",
+    "categories": [
+      "Homelessness Population Estimation",
+      "Demographic Composition and Trends",
+      "COVID-19",
+      "Homelessness and Housing Insecurity"
+    ],
+    "abstract": "This on-line tool enables communities (Continuums of Care, or CoCs) to model different homelessness-related bed capacity scenarios related to COVID-19 exposure and risk status. Users can customize their planning scenarios by varying infection rates, high risk population rates, unsheltered PIT count coverage rates, and view impact on demand for hospitalization and ICU beds, as well as emergency accommodation demand for high and low risk populations without infection.",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/238/"
   }
 ]
