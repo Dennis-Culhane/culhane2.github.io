@@ -165,6 +165,18 @@
             font-size: 1.1rem;
         }
     </style>
+    <script>
+        // 全局 cleanText 函数
+        function cleanText(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/[\u0080-\u00ff]/g, '') // 移除扩展ASCII字符
+                .replace(/[\u0100-\uffff]/g, '') // 移除其他Unicode字符
+                .replace(/[^\x20-\x7E]/g, '') // 只保留基本ASCII可打印字符
+                .replace(/\s+/g, ' ') // 将多个空格替换为单个空格
+                .trim();
+        }
+    </script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Navigation -->
@@ -332,80 +344,7 @@
         let activeCategories = new Set();
         let searchTerm = '';
 
-        // 初始化页面
-        async function initializePage() {
-            try {
-                // 获取所有文章
-                const response = await fetch(window.config.getArticlesUrl());
-                if (!response.ok) {
-                    throw new Error('Failed to fetch articles');
-                }
-                
-                allArticles = await response.json();
-                if (!Array.isArray(allArticles)) {
-                    console.error('Invalid articles data:', allArticles);
-                    allArticles = [];
-                }
-                
-                console.log('Loaded articles:', allArticles);
-                
-                // 渲染最新文章
-                renderLatestArticles();
-                
-                // 提取所有唯一的分类
-                const categories = new Set();
-                allArticles.forEach(article => {
-                    if (Array.isArray(article.categories)) {
-                        article.categories.forEach(cat => categories.add(cat));
-                    }
-                });
-
-                // 渲染分类过滤器
-                const filterContainer = document.getElementById('category-filters');
-                if (filterContainer) {
-                    filterContainer.innerHTML = Array.from(categories).map(category => `
-                        <button class="category-tag inactive" data-category="${category}">
-                            ${category}
-                        </button>
-                    `).join('');
-
-                    // 添加分类点击事件
-                    document.querySelectorAll('.category-tag').forEach(button => {
-                        button.addEventListener('click', function() {
-                            const category = this.dataset.category;
-                            if (this.classList.contains('active')) {
-                                this.classList.replace('active', 'inactive');
-                                activeCategories.delete(category);
-                            } else {
-                                this.classList.replace('inactive', 'active');
-                                activeCategories.add(category);
-                            }
-                            filterAndRenderArticles();
-                        });
-                    });
-                }
-
-                // 设置搜索监听器
-                const searchInput = document.getElementById('search');
-                if (searchInput) {
-                    searchInput.addEventListener('input', (e) => {
-                        searchTerm = e.target.value.toLowerCase();
-                        filterAndRenderArticles();
-                    });
-                }
-
-                // 初始渲染文章列表
-                filterAndRenderArticles();
-            } catch (error) {
-                console.error('Initialization error:', error);
-                const container = document.getElementById('articles-list');
-                if (container) {
-                    container.innerHTML = `<p class="text-red-500 text-center">Error loading articles: ${error.message}</p>`;
-                }
-            }
-        }
-
-        // 修改 renderLatestArticles 函数
+        // 渲染最新文章
         function renderLatestArticles() {
             const latestContainer = document.getElementById('latest-articles');
             if (!latestContainer || !Array.isArray(allArticles)) return;
@@ -438,7 +377,7 @@
             `).join('');
         }
 
-        // 修改 renderArticle 函数
+        // 渲染单篇文章
         function renderArticle(article) {
             return `
                 <div class="article-card">
@@ -452,12 +391,12 @@
                             <span class="article-category">${cat}</span>
                         `).join('') : ''}
                     </div>
-                    <p class="abstract-clamp">${cleanText(article.abstract)}</p>
+                    <p class="abstract-clamp">${cleanText(article.abstract || '')}</p>
                 </div>
             `;
         }
 
-        // 修改 filterAndRenderArticles 函数
+        // 过滤并渲染文章列表
         function filterAndRenderArticles() {
             let filteredArticles = [...allArticles];
 
@@ -474,9 +413,7 @@
                 filteredArticles = filteredArticles.filter(article => 
                     article.title.toLowerCase().includes(searchTerm) ||
                     article.authors.toLowerCase().includes(searchTerm) ||
-                    (article.abstract && article.abstract.toLowerCase().includes(searchTerm)) ||
-                    (Array.isArray(article.categories) && 
-                     article.categories.some(cat => cat.toLowerCase().includes(searchTerm)))
+                    (article.abstract && article.abstract.toLowerCase().includes(searchTerm))
                 );
             }
 
@@ -491,9 +428,78 @@
 
             // 按日期排序
             filteredArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
-
             container.innerHTML = filteredArticles.map(renderArticle).join('');
         }
+
+        // 初始化页面
+        async function initializePage() {
+            try {
+                const response = await fetch(window.config.getArticlesUrl());
+                if (!response.ok) {
+                    throw new Error('Failed to fetch articles');
+                }
+
+                allArticles = await response.json();
+                console.log('Loaded articles:', allArticles);
+
+                // 渲染最新文章
+                renderLatestArticles();
+
+                // 提取并渲染分类
+                const categories = new Set();
+                allArticles.forEach(article => {
+                    if (Array.isArray(article.categories)) {
+                        article.categories.forEach(cat => categories.add(cat));
+                    }
+                });
+
+                const filterContainer = document.getElementById('category-filters');
+                if (filterContainer) {
+                    filterContainer.innerHTML = Array.from(categories).map(category => `
+                        <button class="category-tag inactive" data-category="${category}">
+                            ${category}
+                        </button>
+                    `).join('');
+
+                    // 添加分类点击事件
+                    filterContainer.querySelectorAll('.category-tag').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const category = this.dataset.category;
+                            if (this.classList.contains('active')) {
+                                this.classList.replace('active', 'inactive');
+                                activeCategories.delete(category);
+                            } else {
+                                this.classList.replace('inactive', 'active');
+                                activeCategories.add(category);
+                            }
+                            filterAndRenderArticles();
+                        });
+                    });
+                }
+
+                // 设置搜索监听器
+                const searchInput = document.getElementById('search');
+                if (searchInput) {
+                    searchInput.addEventListener('input', (e) => {
+                        searchTerm = e.target.value.toLowerCase();
+                        filterAndRenderArticles();
+                    });
+                }
+
+                // 初始渲染文章列表
+                filterAndRenderArticles();
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                const container = document.getElementById('articles-list');
+                if (container) {
+                    container.innerHTML = `<p class="text-red-500 text-center">Error loading articles: ${error.message}</p>`;
+                }
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initializePage);
 
         // 添加显示和关闭模态框的函数
         function showArticleDetail(article) {
@@ -553,9 +559,6 @@
                 closeModal();
             }
         });
-
-        // 初始化页面
-        document.addEventListener('DOMContentLoaded', initializePage);
 
         // Follow 功能相关代码
         document.getElementById('follow-btn').addEventListener('click', function() {
