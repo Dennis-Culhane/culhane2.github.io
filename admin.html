@@ -629,10 +629,21 @@
                 
                 const pdfFile = formData.get('pdf');
                 
-                await ArticlesManager.updateArticle(articleData, pdfFile);
-                closeEditModal();
-                await renderArticlesList();
-                alert('Article updated successfully!');
+                // 显示加载状态
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Saving...';
+                
+                try {
+                    await ArticlesManager.updateArticle(articleData, pdfFile);
+                    closeEditModal();
+                    await renderArticlesList();
+                    alert('Article updated successfully!');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
             } catch (error) {
                 console.error('Error updating article:', error);
                 alert('Error updating article: ' + error.message);
@@ -835,6 +846,39 @@
                     urlInput.classList.remove('hidden');
                     document.getElementById('pdf').required = false;
                     document.getElementById('pdf-url').required = true;
+                }
+            });
+        });
+
+        // 添加关闭模态框函数
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            document.getElementById('edit-form').reset();
+        }
+
+        // 确保模态框的关闭按钮和取消按钮正常工作
+        document.addEventListener('DOMContentLoaded', function() {
+            // 关闭按钮点击事件
+            const closeButtons = document.querySelectorAll('[onclick="closeEditModal()"]');
+            closeButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeEditModal();
+                });
+            });
+
+            // ESC键关闭模态框
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeEditModal();
+                }
+            });
+
+            // 点击模态框背景关闭
+            document.getElementById('edit-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeEditModal();
                 }
             });
         });
