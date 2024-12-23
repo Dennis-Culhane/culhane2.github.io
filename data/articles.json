@@ -1562,5 +1562,18 @@
     ],
     "abstract": "Several large US cities, including Chicago, Los Angeles, New York, and Philadelphia, have developed information systems to distribute property-level housing data to community organizations and municipal agencies. These early warning systems are also intended to predict which properties are at greatest risk of abandonment, but they have rarely used statistical modeling to support such forecasts. This study used logistic regression to analyze data from the Philadelphia Neighborhood Information System in order to determine which properties were most likely to become imminently dangerous. Several different characteristics of the property, including whether it was vacant, had outstanding housing code violations, and tax arrearages as well as characteristics of nearby properties were identified as significant predictors. Challenges common to the development of early warning systems - including integrating administrative data, defining abandonment, and modeling temporal and spatial data - are discussed along with policy implications for cities like Philadelphia that have thousands of vacant and abandoned properties.",
     "pdfUrl": "https://works.bepress.com/dennis_culhane/14/"
+  },
+  {
+    "id": "1734970659766",
+    "title": "Predicting Staying In or Leaving Permanent Supportive Housing That Serves Homeless People with Serious Mental Illness",
+    "authors": "Yin-Ling Irene Wong, University of PennsylvaniaTrevor R Hadley, University of PennsylvaniaDennis P Culhane, University of PennsylvaniaSteve R PoulinMorris R Davis, Brian A Cirksey, James L Brown",
+    "date": "2006-01-01",
+    "categories": [
+      "Supportive Housing Interventions for Formerly Homeless Persons",
+      "Homelessness among People with Behavioral Health-related Disabilities",
+      "Most Downloaded"
+    ],
+    "abstract": "N/A",
+    "pdfUrl": "https://works.bepress.com/dennis_culhane/34/"
   }
 ]
